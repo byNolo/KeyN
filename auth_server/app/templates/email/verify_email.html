@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Verify Your Email</title>
+</head>
+<body style="font-family: sans-serif; line-height: 1.5;">
+  <h2>Welcome to KeyN, {{ username }}!</h2>
+  <p>Please verify your email address by clicking the button below:</p>
+  <p>
+    <a href="{{ link }}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+      Verify Email
+    </a>
+  </p>
+  <p>If the button doesn’t work, copy and paste this link into your browser:</p>
+  <p style="word-break: break-all;">{{ link }}</p>
+  <p>Thanks,<br>The KeyN Team</p>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login - KeyN</title>
+</head>
+<body>
+  <h2>KeyN Login</h2>
+  <form method="POST">
+    {{ form.hidden_tag() }}
+    <div>
+      {{ form.username.label }}<br>
+      {{ form.username(size=32) }}<br>
+      {% for error in form.username.errors %}
+        <small style="color: red">{{ error }}</small>
+      {% endfor %}
+    </div>
+    <div>
+      {{ form.password.label }}<br>
+      {{ form.password(size=32) }}<br>
+      {% for error in form.password.errors %}
+        <small style="color: red">{{ error }}</small>
+      {% endfor %}
+    </div>
+    <div>
+      {{ form.submit() }}
+    </div>
+  </form>
+</body>
+</html>
