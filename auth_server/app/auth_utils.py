@@ -4,6 +4,8 @@ import jwt
 import datetime
 
 def send_verification_email(user, app, mail):
+    print("Sending verification email to", user.email)
+
     token = jwt.encode({
         "user_id": user.id,
         "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1)
@@ -18,4 +20,8 @@ def send_verification_email(user, app, mail):
         recipients=[user.email],
         html=html_body
     )
-    mail.send(msg)
+    try:
+        mail.send(msg)
+        print(f"[✓] Verification email sent to {user.email}")
+    except Exception as e:
+        print(f"[X] Failed to send email: {e}")
