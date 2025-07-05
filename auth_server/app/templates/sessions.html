@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>My Active Sessions</title>
+</head>
+<body style="font-family: sans-serif;">
+  <h2>🔐 Active Sessions</h2>
+
+  {% if sessions %}
+    <table border="1" cellpadding="8" cellspacing="0">
+      <tr>
+        <th>Issued</th>
+        <th>Expires</th>
+        <th>IP</th>
+        <th>Device</th>
+        <th>Action</th>
+      </tr>
+      {% for session in sessions %}
+        <tr>
+          <td>{{ session.issued_at }}</td>
+          <td>{{ session.expires_at }}</td>
+          <td>{{ session.ip_address }}</td>
+          <td>{{ session.user_agent }}</td>
+          <td>
+            <form method="POST" action="{{ url_for('auth.revoke_session_ui', session_id=session.id) }}">
+              <button type="submit">Revoke</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p>No active sessions found.</p>
+  {% endif %}
+
+  <p><a href="/">← Back</a></p>
+</body>
+</html>

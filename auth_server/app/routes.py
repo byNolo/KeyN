@@ -184,3 +184,31 @@ def verify_email(token):
         return "Verification link expired."
     except jwt.InvalidTokenError:
         return "Invalid verification token."
+
+from flask import flash, render_template
+
+@auth_bp.route("/sessions", methods=["GET"])
+@login_required
+def session_ui():
+    tokens = RefreshToken.query.filter_by(user_id=current_user.id, revoked=False).all()
+    sessions = [{
+        "id": t.id,
+        "issued_at": t.issued_at.strftime("%Y-%m-%d %H:%M"),
+        "expires_at": t.expires_at.strftime("%Y-%m-%d %H:%M"),
+        "ip_address": t.ip_address,
+        "user_agent": t.user_agent
+    } for t in tokens]
+
+    return render_template("sessions.html", sessions=sessions)
+
+@auth_bp.route("/sessions/<int:session_id>/revoke", methods=["POST"])
+@login_required
+def revoke_session_ui(session_id):
+    token = RefreshToken.query.filter_by(id=session_id, user_id=current_user.id).first()
+    if not token:
+        flash("Session not found", "error")
+    else:
+        token.revoked = True
+        db.session.commit()
+        flash("Session revoked", "success")
+    return redirect(url_for("auth.session_ui"))
