@@ -24,3 +24,31 @@ class RefreshToken(db.Model):
     # NEW FIELDS:
     user_agent = db.Column(db.String(512))
     ip_address = db.Column(db.String(64))
+
+class IPBan(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    ip_address = db.Column(db.String(64), nullable=False, unique=True)
+    reason = db.Column(db.String(255))
+    banned_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    banned_by = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+    expires_at = db.Column(db.DateTime, nullable=True)  # None for permanent ban
+    is_active = db.Column(db.Boolean, default=True)
+
+class DeviceBan(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    device_fingerprint = db.Column(db.String(128), nullable=False, unique=True)
+    reason = db.Column(db.String(255))
+    banned_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    banned_by = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+    expires_at = db.Column(db.DateTime, nullable=True)  # None for permanent ban
+    is_active = db.Column(db.Boolean, default=True)
+
+class LoginAttempt(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    ip_address = db.Column(db.String(64), nullable=False)
+    device_fingerprint = db.Column(db.String(128))
+    user_agent = db.Column(db.String(512))
+    username_attempted = db.Column(db.String(150))
+    success = db.Column(db.Boolean, default=False)
+    timestamp = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)

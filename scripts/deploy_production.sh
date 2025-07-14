@@ -84,13 +84,3 @@ if ss -tln | grep -q ":6002"; then
 else
     echo "❌ Demo Client (port 6002) failed to start"
 fi
-
-echo ""
-echo "🎯 Next Steps:"
-echo "1. Configure your Cloudflare Tunnel with the ingress rules:"
-echo "   ./scripts/setup_cloudflare_tunnel.sh"
-echo "2. Add DNS CNAME records in Cloudflare dashboard"
-echo "3. Test the SSO flow at https://demo-keyn.nolanbc.ca"
-echo ""
-echo "🌩️ Cloudflare Tunnel Configuration:"
-echo "Run: ./scripts/setup_cloudflare_tunnel.sh for complete setup instructions"

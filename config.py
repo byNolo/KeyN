@@ -25,10 +25,13 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = os.environ.get("FLASK_SQLALCHEMY_TRACK_MODIFICATIONS", "False") == "True"
     
     # Session/Cookie configuration for SSO
-    SESSION_COOKIE_DOMAIN = os.environ.get("FLASK_SESSION_COOKIE_DOMAIN")  # e.g., ".nolanbc.ca"
-    SESSION_COOKIE_SECURE = os.environ.get("FLASK_SESSION_COOKIE_SECURE", "False") == "True"  # True for HTTPS
+    # For security with multiple sites on nolanbc.ca, we don't set a cookie domain
+    # This keeps KeyN cookies isolated to their specific subdomains
+    # SSO will work through API calls rather than shared cookies
+    SESSION_COOKIE_DOMAIN = os.environ.get("FLASK_SESSION_COOKIE_DOMAIN")  # None = current domain only
+    SESSION_COOKIE_SECURE = os.environ.get("FLASK_SESSION_COOKIE_SECURE", "True") == "True"  # True for HTTPS in production
     SESSION_COOKIE_HTTPONLY = os.environ.get("FLASK_SESSION_COOKIE_HTTPONLY", "True") == "True"
-    SESSION_COOKIE_SAMESITE = os.environ.get("FLASK_SESSION_COOKIE_SAMESITE", "Lax")  # None for cross-site
+    SESSION_COOKIE_SAMESITE = os.environ.get("FLASK_SESSION_COOKIE_SAMESITE", "Lax")  # Lax for cross-site functionality
     
     # CORS configuration for client apps
     ALLOWED_ORIGINS = os.environ.get("FLASK_ALLOWED_ORIGINS", "").split(",") if os.environ.get("FLASK_ALLOWED_ORIGINS") else []

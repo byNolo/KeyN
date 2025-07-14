@@ -4,6 +4,10 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from .models import User, RefreshToken
 from .forms import LoginForm
 from . import db, login_manager
+from .security_utils import (
+    get_real_ip, generate_device_fingerprint, is_ip_banned, is_device_banned,
+    log_login_attempt, is_rate_limited, ban_ip, ban_device, unban_ip, unban_device
+)
 import jwt
 import datetime
 import secrets
@@ -16,24 +20,54 @@ def load_user(user_id):
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
+    # Get real IP and device fingerprint
+    ip_address = get_real_ip()
+    device_fingerprint = generate_device_fingerprint()
+    
+    # Check if IP or device is banned
+    if is_ip_banned(ip_address):
+        return jsonify({"error": "Your IP address has been banned"}), 403
+    
+    if is_device_banned(device_fingerprint):
+        return jsonify({"error": "Your device has been banned"}), 403
+    
+    # Check rate limiting
+    if is_rate_limited(ip_address):
+        return jsonify({"error": "Too many failed login attempts. Please try again later."}), 429
+    
     form = LoginForm()
     if form.validate_on_submit():
         username = form.username.data
         password = form.password.data
         user = User.query.filter_by(username=username).first()
+        
         if user and check_password_hash(user.password_hash, password):
             if not user.is_verified:
+                # Log failed attempt for unverified user
+                log_login_attempt(ip_address, device_fingerprint, username, False)
                 form.username.errors.append("Please verify your email first.")
                 return render_template("login.html", form=form)
+            
+            # Log successful login
+            log_login_attempt(ip_address, device_fingerprint, username, True, user.id)
+            
+            # Update user's last login
+            user.last_login = datetime.datetime.utcnow()
+            db.session.commit()
+            
             login_user(user)
             session["token"] = generate_access_token(user.id)
             session["refresh_token"] = generate_refresh_token(user.id)
             redirect_url = request.args.get("redirect") or url_for("auth.user_info")
             return redirect(redirect_url)
+        
+        # Log failed login attempt
+        log_login_attempt(ip_address, device_fingerprint, username, False)
         form.username.errors.append("Invalid username or password")
+    
     return render_template("login.html", form=form)
 
-@auth_bp.route("/logout", methods=["POST"])
+@auth_bp.route("/logout", methods=["GET", "POST"])
 @login_required
 def logout():
     # Revoke all refresh tokens for user
@@ -42,7 +76,14 @@ def logout():
 
     logout_user()
     session.clear()
-    return jsonify({"status": "logged out"})
+    
+    # Handle both GET and POST requests
+    if request.method == "GET":
+        # For GET requests (like from demo client), redirect to login page
+        return redirect(url_for("auth.login"))
+    else:
+        # For POST requests (API calls), return JSON response
+        return jsonify({"status": "logged out"})
 
 @auth_bp.route("/api/validate-token", methods=["GET"])
 def validate_token():
@@ -56,12 +97,33 @@ def validate_token():
         return jsonify({"valid": False, "error": "Invalid token"}), 401
 
 @auth_bp.route("/api/user", methods=["GET"])
-@login_required
 def user_info():
-    return jsonify({
-        "user_id": current_user.id,
-        "username": current_user.username
-    })
+    """Get user info - supports both session-based and token-based auth"""
+    user = None
+    
+    # Try session-based authentication first (for same-domain)
+    if current_user and current_user.is_authenticated:
+        user = current_user
+    else:
+        # Try Bearer token authentication (for cross-domain)
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            token = auth_header.split(' ')[1]
+            try:
+                decoded = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
+                user = User.query.get(decoded["user_id"])
+            except jwt.ExpiredSignatureError:
+                return jsonify({"error": "Token expired"}), 401
+            except jwt.InvalidTokenError:
+                return jsonify({"error": "Invalid token"}), 401
+    
+    if user:
+        return jsonify({
+            "user_id": user.id,
+            "username": user.username
+        })
+    else:
+        return jsonify({"error": "Not authenticated"}), 401
 
 def generate_access_token(user_id):
     return jwt.encode({
@@ -73,7 +135,7 @@ def generate_refresh_token(user_id):
     raw_token = secrets.token_urlsafe(64)
     expires = datetime.datetime.utcnow() + datetime.timedelta(days=7)
 
-    ip = request.remote_addr
+    ip = get_real_ip()  # Use the real IP function
     ua = request.headers.get("User-Agent", "unknown")
 
     db_token = RefreshToken(
@@ -179,36 +241,169 @@ def verify_email(token):
             db.session.commit()
             return "Email verified. You can now log in."
         else:
-            return "Already verified or invalid."
-    except jwt.ExpiredSignatureError:
-        return "Verification link expired."
-    except jwt.InvalidTokenError:
-        return "Invalid verification token."
+            return "Already verified or invalid token."
+    except:
+        return "Invalid or expired token."
 
-from flask import flash, render_template
-
-@auth_bp.route("/sessions", methods=["GET"])
+# Admin routes for managing bans
+@auth_bp.route("/admin/ban-ip", methods=["POST"])
 @login_required
-def session_ui():
-    tokens = RefreshToken.query.filter_by(user_id=current_user.id, revoked=False).all()
-    sessions = [{
-        "id": t.id,
-        "issued_at": t.issued_at.strftime("%Y-%m-%d %H:%M"),
-        "expires_at": t.expires_at.strftime("%Y-%m-%d %H:%M"),
-        "ip_address": t.ip_address,
-        "user_agent": t.user_agent
-    } for t in tokens]
+def admin_ban_ip():
+    """Admin endpoint to ban an IP address"""
+    # You should add proper admin authorization here
+    data = request.get_json()
+    ip_address = data.get('ip_address')
+    reason = data.get('reason', 'Manual admin ban')
+    duration_hours = data.get('duration_hours')  # None for permanent
+    
+    if not ip_address:
+        return jsonify({"error": "IP address required"}), 400
+    
+    expires_at = None
+    if duration_hours:
+        expires_at = datetime.datetime.utcnow() + datetime.timedelta(hours=duration_hours)
+    
+    ban_ip(ip_address, reason, current_user.id, expires_at)
+    
+    return jsonify({
+        "success": True, 
+        "message": f"IP {ip_address} has been banned",
+        "expires_at": expires_at.isoformat() if expires_at else None
+    })
 
-    return render_template("sessions.html", sessions=sessions)
-
-@auth_bp.route("/sessions/<int:session_id>/revoke", methods=["POST"])
+@auth_bp.route("/admin/ban-device", methods=["POST"])
 @login_required
-def revoke_session_ui(session_id):
-    token = RefreshToken.query.filter_by(id=session_id, user_id=current_user.id).first()
-    if not token:
-        flash("Session not found", "error")
-    else:
-        token.revoked = True
-        db.session.commit()
-        flash("Session revoked", "success")
-    return redirect(url_for("auth.session_ui"))
+def admin_ban_device():
+    """Admin endpoint to ban a device fingerprint"""
+    data = request.get_json()
+    device_fingerprint = data.get('device_fingerprint')
+    reason = data.get('reason', 'Manual admin ban')
+    duration_hours = data.get('duration_hours')  # None for permanent
+    
+    if not device_fingerprint:
+        return jsonify({"error": "Device fingerprint required"}), 400
+    
+    expires_at = None
+    if duration_hours:
+        expires_at = datetime.datetime.utcnow() + datetime.timedelta(hours=duration_hours)
+    
+    ban_device(device_fingerprint, reason, current_user.id, expires_at)
+    
+    return jsonify({
+        "success": True, 
+        "message": f"Device has been banned",
+        "expires_at": expires_at.isoformat() if expires_at else None
+    })
+
+@auth_bp.route("/admin/unban-ip", methods=["POST"])
+@login_required
+def admin_unban_ip():
+    """Admin endpoint to unban an IP address"""
+    data = request.get_json()
+    ip_address = data.get('ip_address')
+    
+    if not ip_address:
+        return jsonify({"error": "IP address required"}), 400
+    
+    unban_ip(ip_address)
+    return jsonify({"success": True, "message": f"IP {ip_address} has been unbanned"})
+
+@auth_bp.route("/admin/unban-device", methods=["POST"])
+@login_required
+def admin_unban_device():
+    """Admin endpoint to unban a device"""
+    data = request.get_json()
+    device_fingerprint = data.get('device_fingerprint')
+    
+    if not device_fingerprint:
+        return jsonify({"error": "Device fingerprint required"}), 400
+    
+    unban_device(device_fingerprint)
+    return jsonify({"success": True, "message": "Device has been unbanned"})
+
+@auth_bp.route("/admin/login-attempts", methods=["GET"])
+@login_required
+def admin_login_attempts():
+    """Admin endpoint to view recent login attempts"""
+    from .models import LoginAttempt
+    
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 50, type=int)
+    
+    attempts = LoginAttempt.query.order_by(LoginAttempt.timestamp.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    
+    return jsonify({
+        "attempts": [
+            {
+                "id": attempt.id,
+                "ip_address": attempt.ip_address,
+                "device_fingerprint": attempt.device_fingerprint,
+                "username_attempted": attempt.username_attempted,
+                "success": attempt.success,
+                "timestamp": attempt.timestamp.isoformat(),
+                "user_agent": attempt.user_agent
+            }
+            for attempt in attempts.items
+        ],
+        "total": attempts.total,
+        "pages": attempts.pages,
+        "current_page": page
+    })
+
+@auth_bp.route("/admin/bans", methods=["GET"])
+@login_required
+def admin_view_bans():
+    """Admin endpoint to view active bans"""
+    from .models import IPBan, DeviceBan
+    
+    ip_bans = IPBan.query.filter_by(is_active=True).all()
+    device_bans = DeviceBan.query.filter_by(is_active=True).all()
+    
+    return jsonify({
+        "ip_bans": [
+            {
+                "id": ban.id,
+                "ip_address": ban.ip_address,
+                "reason": ban.reason,
+                "banned_at": ban.banned_at.isoformat(),
+                "expires_at": ban.expires_at.isoformat() if ban.expires_at else None
+            }
+            for ban in ip_bans
+        ],
+        "device_bans": [
+            {
+                "id": ban.id,
+                "device_fingerprint": ban.device_fingerprint,
+                "reason": ban.reason,
+                "banned_at": ban.banned_at.isoformat(),
+                "expires_at": ban.expires_at.isoformat() if ban.expires_at else None
+            }
+            for ban in device_bans
+        ]
+    })
+
+@auth_bp.route("/admin")
+@login_required
+def admin_interface():
+    """Admin interface for managing security"""
+    # You should add proper admin authorization here
+    return render_template("admin.html")
+
+@auth_bp.route("/api/cross-domain-auth", methods=["POST"])
+@login_required
+def cross_domain_auth():
+    """Provide tokens for cross-domain authentication"""
+    data = request.get_json()
+    client_domain = data.get('client_domain')
+    
+    # Generate a temporary token for the client app
+    access_token = generate_access_token(current_user.id)
+    
+    return jsonify({
+        'access_token': access_token,
+        'user_id': current_user.id,
+        'username': current_user.username,
+        'expires_in': 900  # 15 minutes
+    })

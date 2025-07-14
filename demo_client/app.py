@@ -13,10 +13,26 @@ CLIENT_URL = 'https://demo-keyn.nolanbc.ca'  # This demo client (via Cloudflare 
 def check_auth():
     """Check if user is authenticated via KeyN"""
     # Check if we have authentication flag in session
-    if session.get('keyn_authenticated'):
+    if session.get('keyn_authenticated') and session.get('keyn_user_id'):
         return {'user_id': session.get('keyn_user_id'), 'valid': True}
     
-    # Try to validate with KeyN using shared cookies
+    # Check for token in session from successful login
+    token = session.get('keyn_access_token')
+    if token:
+        try:
+            response = requests.get(f'{AUTH_SERVER_URL}/api/validate-token', 
+                                  params={'token': token},
+                                  timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('valid'):
+                    session['keyn_authenticated'] = True
+                    session['keyn_user_id'] = data['user_id']
+                    return {'user_id': data['user_id'], 'valid': True}
+        except requests.RequestException as e:
+            print(f"Token validation error: {e}")
+    
+    # Fallback: try to validate with current request cookies
     try:
         response = requests.get(f'{AUTH_SERVER_URL}/api/user', 
                               cookies=request.cookies,
@@ -29,20 +45,36 @@ def check_auth():
             session['keyn_username'] = user_data['username']
             return {'user_id': user_data['user_id'], 'valid': True}
     except requests.RequestException as e:
-        print(f"Auth check error: {e}")
+        print(f"Cookie auth fallback error: {e}")
     
     return None
 
 def get_user_info():
     """Get user info from session or KeyN auth server"""
     # First try from our session
-    if session.get('keyn_username'):
+    if session.get('keyn_username') and session.get('keyn_user_id'):
         return {
             'user_id': session.get('keyn_user_id'),
             'username': session.get('keyn_username')
         }
     
-    # Try to get from KeyN
+    # Try to get from KeyN using token
+    token = session.get('keyn_access_token')
+    if token:
+        try:
+            response = requests.get(f'{AUTH_SERVER_URL}/api/user',
+                                  headers={'Authorization': f'Bearer {token}'},
+                                  timeout=5)
+            if response.status_code == 200:
+                user_data = response.json()
+                # Cache in session
+                session['keyn_user_id'] = user_data['user_id']
+                session['keyn_username'] = user_data['username']
+                return user_data
+        except requests.RequestException as e:
+            print(f"Get user info with token error: {e}")
+    
+    # Fallback: try with cookies
     try:
         response = requests.get(f'{AUTH_SERVER_URL}/api/user',
                               cookies=request.cookies,
@@ -54,7 +86,8 @@ def get_user_info():
             session['keyn_username'] = user_data['username']
             return user_data
     except requests.RequestException as e:
-        print(f"Get user info error: {e}")
+        print(f"Get user info with cookies error: {e}")
+        
     return None
 
 @app.route('/')
@@ -141,29 +174,55 @@ def auth_callback():
     """Handle return from KeyN auth server"""
     # Try to get user info from KeyN using shared session cookies
     try:
+        # Add a small delay to ensure cookies are properly set
+        import time
+        time.sleep(0.5)
+        
         # Check if we have a valid session by calling the user endpoint
+        # Make sure to include all cookies from the current request
         response = requests.get(f'{AUTH_SERVER_URL}/api/user', 
                               cookies=request.cookies,
-                              timeout=5)
+                              headers={'User-Agent': request.headers.get('User-Agent', '')},
+                              timeout=10)
+        
+        print(f"Auth callback - user endpoint response: {response.status_code}")
+        
         if response.status_code == 200:
             user_data = response.json()
+            print(f"Auth callback - got user data: {user_data}")
+            
             # Store user info in our session
             session['keyn_user_id'] = user_data['user_id']
             session['keyn_username'] = user_data['username']
             
-            # Try to get the access token from KeyN's session
-            token_response = requests.get(f'{AUTH_SERVER_URL}/api/validate-token',
-                                        cookies=request.cookies,
-                                        timeout=5)
+            # Get a cross-domain access token for secure API calls
+            token_response = requests.post(f'{AUTH_SERVER_URL}/api/cross-domain-auth',
+                                         json={'client_domain': CLIENT_URL},
+                                         cookies=request.cookies,
+                                         headers={'Content-Type': 'application/json',
+                                                'User-Agent': request.headers.get('User-Agent', '')},
+                                         timeout=10)
+            
+            print(f"Auth callback - token response: {token_response.status_code}")
+            
             if token_response.status_code == 200:
-                # Store a flag that we're authenticated
+                token_data = token_response.json()
+                session['keyn_access_token'] = token_data['access_token']
                 session['keyn_authenticated'] = True
+                print("Auth callback - successfully set up authentication")
+            else:
+                # Even if token request fails, we have user data from cookies
+                session['keyn_authenticated'] = True
+                print("Auth callback - authentication via cookies only")
                 
             return redirect('/')
+        else:
+            print(f"Auth callback - user endpoint failed: {response.text}")
+            
     except requests.RequestException as e:
         print(f"Auth callback error: {e}")
     
-    # If authentication failed, redirect back to login
+    # If authentication failed, redirect back to login with error
     return redirect('/login?error=auth_failed')
 
 @app.route('/logout')
