@@ -7,29 +7,29 @@ KeyN is a centralized Single Sign-On (SSO) authentication system that allows use
 
 | Service | Status | Local Port | Production URL |
 |---------|--------|------------|----------------|
-| **Auth Server** | ✅ RUNNING | 6000 | https://auth.keyn.nolanbc.ca |
+| **Auth Server** | ✅ RUNNING | 6000 | https://auth-keyn.nolanbc.ca |
 | **UI Site** | ✅ RUNNING | 6001 | https://keyn.nolanbc.ca |
-| **Demo Client** | ✅ RUNNING | 6002 | https://demo.keyn.nolanbc.ca |
+| **Demo Client** | ✅ RUNNING | 6002 | https://demo-keyn.nolanbc.ca |
 
 ## 🌩️ Cloudflare Tunnels Configuration
 
 ### Tunnel Ingress Rules:
 ```yaml
 ingress:
-  - hostname: auth.keyn.nolanbc.ca
+  - hostname: auth-keyn.nolanbc.ca
     service: http://localhost:6000
   - hostname: keyn.nolanbc.ca
     service: http://localhost:6001
-  - hostname: demo.keyn.nolanbc.ca
+  - hostname: demo-keyn.nolanbc.ca
     service: http://localhost:6002
   - service: http_status:404
 ```
 
 ### DNS Records (CNAME):
 ```
-auth.keyn.nolanbc.ca  CNAME  YOUR_TUNNEL_ID.cfargotunnel.com
+auth-keyn.nolanbc.ca  CNAME  YOUR_TUNNEL_ID.cfargotunnel.com
 keyn.nolanbc.ca       CNAME  YOUR_TUNNEL_ID.cfargotunnel.com
-demo.keyn.nolanbc.ca  CNAME  YOUR_TUNNEL_ID.cfargotunnel.com
+demo-keyn.nolanbc.ca  CNAME  YOUR_TUNNEL_ID.cfargotunnel.com
 ```
 
 ## 🚀 Quick Start
@@ -46,9 +46,9 @@ demo.keyn.nolanbc.ca  CNAME  YOUR_TUNNEL_ID.cfargotunnel.com
 
 ### 3. Add Tunnel Routes
 ```bash
-cloudflared tunnel route dns YOUR_TUNNEL_NAME auth.keyn.nolanbc.ca
+cloudflared tunnel route dns YOUR_TUNNEL_NAME auth-keyn.nolanbc.ca
 cloudflared tunnel route dns YOUR_TUNNEL_NAME keyn.nolanbc.ca
-cloudflared tunnel route dns YOUR_TUNNEL_NAME demo.keyn.nolanbc.ca
+cloudflared tunnel route dns YOUR_TUNNEL_NAME demo-keyn.nolanbc.ca
 ```
 
 ### 4. Run Tunnel
@@ -57,7 +57,7 @@ cloudflared tunnel run YOUR_TUNNEL_NAME
 ```
 
 ### 5. Test SSO
-Visit: https://demo.keyn.nolanbc.ca
+Visit: https://demo-keyn.nolanbc.ca
 
 ## 🌐 Production Configuration
 
@@ -71,8 +71,8 @@ Visit: https://demo.keyn.nolanbc.ca
 - `https://sq.nolanbc.ca` 
 - `https://nolanbc.ca`
 - `https://keyn.nolanbc.ca:6001`
-- `https://auth.keyn.nolanbc.ca:6000`
-- `https://demo.keyn.nolanbc.ca:6002`
+- `https://auth-keyn.nolanbc.ca:6000`
+- `https://demo-keyn.nolanbc.ca:6002`
 
 ## 🚀 Next Steps for Cloudflare Tunnels
 
@@ -84,9 +84,9 @@ Run the setup script for configuration details:
 
 ### 2. Add Tunnel Routes
 ```bash
-cloudflared tunnel route dns YOUR_TUNNEL_NAME auth.keyn.nolanbc.ca
+cloudflared tunnel route dns YOUR_TUNNEL_NAME auth-keyn.nolanbc.ca
 cloudflared tunnel route dns YOUR_TUNNEL_NAME keyn.nolanbc.ca
-cloudflared tunnel route dns YOUR_TUNNEL_NAME demo.keyn.nolanbc.ca
+cloudflared tunnel route dns YOUR_TUNNEL_NAME demo-keyn.nolanbc.ca
 ```
 
 ### 3. Start Your Tunnel
@@ -96,9 +96,9 @@ cloudflared tunnel run YOUR_TUNNEL_NAME
 
 ### 4. Test the SSO Flow
 Once tunnel is running:
-1. Visit: `https://demo.keyn.nolanbc.ca`
+1. Visit: `https://demo-keyn.nolanbc.ca`
 2. Click "Login with KeyN" 
-3. Register/Login at: `https://auth.keyn.nolanbc.ca`
+3. Register/Login at: `https://auth-keyn.nolanbc.ca`
 4. Verify redirect back works with authentication!
 
 ## 🔧 Service Management
@@ -136,11 +136,11 @@ Your KeyN system now has:
 For Vinyl Vote or other apps, use this pattern:
 ```python
 # Check if user is authenticated
-response = requests.get('https://auth.keyn.nolanbc.ca:6000/api/validate-token',
+response = requests.get('https://auth-keyn.nolanbc.ca:6000/api/validate-token',
                        cookies=request.cookies)
 if response.status_code != 200:
     # Redirect to KeyN login
-    return redirect('https://auth.keyn.nolanbc.ca:6000/login?redirect=' + 
+    return redirect('https://auth-keyn.nolanbc.ca:6000/login?redirect=' + 
                    urlencode(return_url))
 ```
 

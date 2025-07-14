@@ -20,8 +20,7 @@ class Config:
     
 
     # Database configuration
-    # SQLALCHEMY_DATABASE_URI = os.environ.get("FLASK_SQLALCHEMY_DATABASE_URI", "sqlite:////home/sam/KeyN/Dev/KeyN/auth_server/instance/keyn_auth.db")
-    SQLALCHEMY_DATABASE_URI = "sqlite:////home/sam/KeyN/Dev/KeyN/auth_server/instance/keyn_auth.db"  # Fixed absolute path
+    SQLALCHEMY_DATABASE_URI = os.environ.get("FLASK_SQLALCHEMY_DATABASE_URI", "sqlite:///instance/keyn_auth.db")
     SQLALCHEMY_TRACK_MODIFICATIONS = os.environ.get("FLASK_SQLALCHEMY_TRACK_MODIFICATIONS", "False") == "True"
     
     # Session/Cookie configuration for SSO

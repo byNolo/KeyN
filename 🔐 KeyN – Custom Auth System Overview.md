@@ -11,14 +11,14 @@ Create a centralized, secure, and resume-worthy authentication system (KeyN) tha
 | Component | Description | URL (for now) |
 | --- | --- | --- |
 | **KeyN UI Site** | Public-facing marketing/promo/info page for KeyN | `https://KeyN.nolanbc.ca` |
-| **KeyN Auth Server** | The backend auth system that handles login & tokens | `https://auth.KeyN.nolanbc.ca` |
+| **KeyN Auth Server** | The backend auth system that handles login & tokens | `https://auth-keyn.nolanbc.ca` |
 | **Vinyl Vote** | Album rating app that consumes KeyN's login system | `https://Album.nolanbc.ca` |
 | **SideQuest** | Challenge/quest app that also uses KeyN login | `https://sq.nolanbc.ca` | (not made yet)
 | **Landing Page** | Central hub that also authenticates via KeyN | `https://nolanbc.ca` |
 
 ---
 
-## 🛠️ KeyN Auth Server Features (`auth.KeyN.nolanbc.ca`)
+## 🛠️ KeyN Auth Server Features (`auth-keyn.nolanbc.ca`)
 
 ### Core Endpoints
 
@@ -58,7 +58,7 @@ Create a centralized, secure, and resume-worthy authentication system (KeyN) tha
 
 1. User visits `vv.nolanbc.ca` or `sq.nolanbc.ca`
 2. Site checks session or access token
-3. If missing/expired → redirect to `auth.KeyN.nolanbc.ca/login?redirect=https://vv.nolanbc.ca/return`
+3. If missing/expired → redirect to `auth-keyn.nolanbc.ca/login?redirect=https://vv.nolanbc.ca/return`
 4. User logs in → KeyN sets a cookie for `.nolanbc.ca`
 5. User is redirected back, fully authenticated
 6. Client app uses access token or verifies session with `GET /api/validate-token`
@@ -93,4 +93,4 @@ Create a centralized, secure, and resume-worthy authentication system (KeyN) tha
 | --- | --- |
 | **KeyN** | Your custom authentication system |
 | `KeyN.nolanbc.ca` | The public-facing site for KeyN |
-| `auth.KeyN.nolanbc.ca` | The backend auth API and login server |
+| `auth-keyn.nolanbc.ca` | The backend auth API and login server |

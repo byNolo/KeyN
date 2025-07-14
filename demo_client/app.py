@@ -2,13 +2,17 @@ from flask import Flask, session, request, redirect, jsonify, render_template_st
 import requests
 import os
 from urllib.parse import urlencode
+from dotenv import load_dotenv
+
+# Load environment variables from parent directory
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
 
 app = Flask(__name__)
-app.secret_key = 'demo-client-secret'
+app.secret_key = os.environ.get('DEMO_CLIENT_SECRET_KEY', 'demo-client-fallback-secret')
 
-# Configuration
-AUTH_SERVER_URL = 'https://auth-keyn.nolanbc.ca'  # KeyN auth server (via Cloudflare Tunnel)
-CLIENT_URL = 'https://demo-keyn.nolanbc.ca'  # This demo client (via Cloudflare Tunnel)
+# Configuration - use environment variables for production
+AUTH_SERVER_URL = os.environ.get('KEYN_AUTH_SERVER_URL', 'https://auth-keyn.nolanbc.ca')
+CLIENT_URL = os.environ.get('KEYN_DEMO_CLIENT_URL', 'https://demo-keyn.nolanbc.ca')
 
 def check_auth():
     """Check if user is authenticated via KeyN"""

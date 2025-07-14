@@ -11,6 +11,7 @@ from .security_utils import (
 import jwt
 import datetime
 import secrets
+import os
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -407,3 +408,60 @@ def cross_domain_auth():
         'username': current_user.username,
         'expires_in': 900  # 15 minutes
     })
+
+@auth_bp.route("/health")
+def health_check():
+    """Health check endpoint for monitoring service status"""
+    try:
+        # Check database connectivity
+        db_status = "healthy"
+        try:
+            from sqlalchemy import text
+            db.session.execute(text("SELECT 1"))
+            user_count = User.query.count()
+        except Exception as e:
+            db_status = f"error: {str(e)}"
+            user_count = -1
+        
+        # Check email configuration
+        email_status = "configured" if current_app.config.get("MAIL_USERNAME") else "not_configured"
+        
+        # Check database file size
+        db_path = current_app.config.get("SQLALCHEMY_DATABASE_URI", "").replace("sqlite:///", "")
+        db_size = 0
+        if os.path.exists(db_path):
+            db_size = os.path.getsize(db_path)
+        
+        # Get service uptime (approximate)
+        import time
+        uptime = time.time()
+        
+        health_data = {
+            "status": "healthy" if db_status == "healthy" else "degraded",
+            "timestamp": datetime.datetime.utcnow().isoformat(),
+            "services": {
+                "database": {
+                    "status": db_status,
+                    "user_count": user_count,
+                    "size_bytes": db_size
+                },
+                "email": {
+                    "status": email_status
+                },
+                "auth": {
+                    "status": "healthy"
+                }
+            },
+            "version": "1.0.0",
+            "uptime_seconds": int(uptime % 86400)  # Rough uptime within day
+        }
+        
+        status_code = 200 if health_data["status"] == "healthy" else 503
+        return jsonify(health_data), status_code
+        
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "timestamp": datetime.datetime.utcnow().isoformat(),
+            "error": str(e)
+        }), 500

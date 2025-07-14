@@ -2,12 +2,31 @@
 
 > A centralized, secure authentication system that allows users to login once and access all your applications with shared login sessions.
 
-## 🚀 Quick Start
+## � **Security Setup Required**
+
+⚠️ **Before deploying, you MUST configure environment variables:**
+
+```bash
+# 1. Copy environment template
+cp .env.example .env
+
+# 2. Edit with your secure values
+nano .env  # Update secret keys, email, domains
+
+# 3. Generate secure keys
+python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+📖 **See [`ENVIRONMENT_SETUP.md`](ENVIRONMENT_SETUP.md) for complete configuration guide**
+
+---
+
+## �🚀 Quick Start
 
 1. **Start Services**: `./scripts/deploy_production.sh`
 2. **Configure Tunnel**: `./scripts/setup_cloudflare_tunnel.sh`
 3. **Run Tunnel**: Configure your Cloudflare tunnel with the provided settings
-4. **Test**: Visit https://demo.keyn.nolanbc.ca
+4. **Test**: Visit https://demo-keyn.nolanbc.ca
 
 ## 📁 Project Structure
 
@@ -36,8 +55,8 @@ KeyN/
 ## 🌐 Production URLs
 
 - **KeyN Landing**: https://keyn.nolanbc.ca
-- **Authentication**: https://auth.keyn.nolanbc.ca  
-- **Demo Client**: https://demo.keyn.nolanbc.ca
+- **Authentication**: https://auth-keyn.nolanbc.ca  
+- **Demo Client**: https://demo-keyn.nolanbc.ca
 
 ## 🔧 Key Features
 
@@ -55,11 +74,11 @@ To integrate with other apps (like Vinyl Vote):
 
 ```python
 # Check authentication
-response = requests.get('https://auth.keyn.nolanbc.ca/api/validate-token',
+response = requests.get('https://auth-keyn.nolanbc.ca/api/validate-token',
                        cookies=request.cookies)
 if response.status_code != 200:
     # Redirect to KeyN login
-    return redirect('https://auth.keyn.nolanbc.ca/login?redirect=' + callback_url)
+    return redirect('https://auth-keyn.nolanbc.ca/login?redirect=' + callback_url)
 ```
 
 ## 📝 Environment Configuration
@@ -100,9 +119,27 @@ ss -tln | grep -E ":(6000|6001|6002)"
 
 ## 📖 Documentation
 
-- **Main Guide**: `PRODUCTION_STATUS.md` - Complete setup and usage
+- **🔧 Environment Setup**: `ENVIRONMENT_SETUP.md` - **REQUIRED** security configuration
+- **Production Guide**: `PRODUCTION_STATUS.md` - Complete setup and deployment
+- **Integration Guide**: `KEYN_INTEGRATION_GUIDE.md` - Add KeyN to your apps
 - **System Overview**: `🔐 KeyN – Custom Auth System Overview.md` - Architecture and design
-- **Environment**: `.env.example` - Configuration template
+- **Security Features**: `SECURITY_ENHANCEMENT_SUMMARY.md` - Security capabilities
+- **Environment Template**: `.env.example` - Configuration template
+
+## 🛠️ Management Scripts
+
+```bash
+# Health monitoring
+./scripts/health_check.sh           # Check service status
+./scripts/health_check.sh true      # Check status and auto-restart if needed
+
+# Log management
+./scripts/manage_logs.sh            # Rotate logs and cleanup old files
+
+# Service management
+./scripts/deploy_production.sh      # Start all services
+./scripts/stop_keyn_services.sh     # Stop all services
+```
 
 ---
 
