@@ -3,6 +3,7 @@ Flask-SQLAlchemy
 Flask-Login
 Flask-WTF
 Flask-Mail
+Flask-CORS
 email-validator
 PyJWT
 python-dotenv

@@ -2,6 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_mail import Mail
+from flask_cors import CORS
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -14,6 +15,20 @@ mail = Mail()
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+
+    # Configure CORS for client apps
+    if app.config.get('ALLOWED_ORIGINS'):
+        CORS(app, origins=app.config['ALLOWED_ORIGINS'], supports_credentials=True)
+    else:
+        # Development mode - allow all origins with credentials
+        CORS(app, supports_credentials=True)
+
+    # Configure session cookies for SSO
+    if app.config.get('SESSION_COOKIE_DOMAIN'):
+        app.config['SESSION_COOKIE_DOMAIN'] = app.config['SESSION_COOKIE_DOMAIN']
+    app.config['SESSION_COOKIE_SECURE'] = app.config.get('SESSION_COOKIE_SECURE', False)
+    app.config['SESSION_COOKIE_HTTPONLY'] = app.config.get('SESSION_COOKIE_HTTPONLY', True)
+    app.config['SESSION_COOKIE_SAMESITE'] = app.config.get('SESSION_COOKIE_SAMESITE', 'Lax')
 
     db.init_app(app)
     login_manager.init_app(app)

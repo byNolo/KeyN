@@ -20,5 +20,15 @@ class Config:
     
 
     # Database configuration
-    SQLALCHEMY_DATABASE_URI = os.environ.get("FLASK_SQLALCHEMY_DATABASE_URI", "sqlite:///site.db")
+    # SQLALCHEMY_DATABASE_URI = os.environ.get("FLASK_SQLALCHEMY_DATABASE_URI", "sqlite:////home/sam/KeyN/Dev/KeyN/auth_server/instance/keyn_auth.db")
+    SQLALCHEMY_DATABASE_URI = "sqlite:////home/sam/KeyN/Dev/KeyN/auth_server/instance/keyn_auth.db"  # Fixed absolute path
     SQLALCHEMY_TRACK_MODIFICATIONS = os.environ.get("FLASK_SQLALCHEMY_TRACK_MODIFICATIONS", "False") == "True"
+    
+    # Session/Cookie configuration for SSO
+    SESSION_COOKIE_DOMAIN = os.environ.get("FLASK_SESSION_COOKIE_DOMAIN")  # e.g., ".nolanbc.ca"
+    SESSION_COOKIE_SECURE = os.environ.get("FLASK_SESSION_COOKIE_SECURE", "False") == "True"  # True for HTTPS
+    SESSION_COOKIE_HTTPONLY = os.environ.get("FLASK_SESSION_COOKIE_HTTPONLY", "True") == "True"
+    SESSION_COOKIE_SAMESITE = os.environ.get("FLASK_SESSION_COOKIE_SAMESITE", "Lax")  # None for cross-site
+    
+    # CORS configuration for client apps
+    ALLOWED_ORIGINS = os.environ.get("FLASK_ALLOWED_ORIGINS", "").split(",") if os.environ.get("FLASK_ALLOWED_ORIGINS") else []
