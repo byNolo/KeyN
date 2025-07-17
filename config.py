@@ -5,6 +5,7 @@ load_dotenv()
 
 class Config:
     SECRET_KEY = os.environ.get("FLASK_SECRET_KEY", "fallback-secret")
+    PERMANENT_SESSION_LIFETIME = os.environ.get("FLASK_PERMANENT_SESSION_LIFETIME", 7)  # Default to 7 days
 
     # Email (Flask-Mail) configuration
     MAIL_SERVER = os.environ.get("FLASK_MAIL_SERVER", "smtp.gmail.com")

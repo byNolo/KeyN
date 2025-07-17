@@ -24,6 +24,7 @@ def create_app():
         CORS(app, supports_credentials=True)
 
     # Configure session cookies for SSO
+    app.config['SESSION_COOKIE_NAME'] = 'keyn_session'  # Use KeyN-specific cookie name
     if app.config.get('SESSION_COOKIE_DOMAIN'):
         app.config['SESSION_COOKIE_DOMAIN'] = app.config['SESSION_COOKIE_DOMAIN']
     app.config['SESSION_COOKIE_SECURE'] = app.config.get('SESSION_COOKIE_SECURE', False)
