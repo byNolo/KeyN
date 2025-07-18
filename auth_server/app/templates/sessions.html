@@ -1,39 +1,59 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>My Active Sessions</title>
-</head>
-<body style="font-family: sans-serif;">
-  <h2>🔐 Active Sessions</h2>
+{% extends "base.html" %}
+
+{% block title %}My Active Sessions - KeyN{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="header">
+    <img src="{{ url_for('static', filename='logos/light-mode-keyn-logo.svg') }}" 
+         alt="KeyN Logo" class="logo logo-light">
+    <img src="{{ url_for('static', filename='logos/dark-mode-keyn-logo.svg') }}" 
+         alt="KeyN Logo" class="logo logo-dark">
+    <h2>Active Sessions</h2>
+  </div>
 
   {% if sessions %}
-    <table border="1" cellpadding="8" cellspacing="0">
-      <tr>
-        <th>Issued</th>
-        <th>Expires</th>
-        <th>IP</th>
-        <th>Device</th>
-        <th>Action</th>
-      </tr>
-      {% for session in sessions %}
+    <table class="sessions-table">
+      <thead>
         <tr>
-          <td>{{ session.issued_at }}</td>
-          <td>{{ session.expires_at }}</td>
-          <td>{{ session.ip_address }}</td>
-          <td>{{ session.user_agent }}</td>
-          <td>
-            <form method="POST" action="{{ url_for('auth.revoke_session_ui', session_id=session.id) }}">
-              <button type="submit">Revoke</button>
-            </form>
-          </td>
+          <th>Issued</th>
+          <th>Expires</th>
+          <th>IP Address</th>
+          <th>Device</th>
+          <th>Action</th>
         </tr>
-      {% endfor %}
+      </thead>
+      <tbody>
+        {% for session in sessions %}
+          <tr>
+            <td>
+              <span class="timestamp">{{ session.issued_at }}</span>
+            </td>
+            <td>
+              <span class="timestamp">{{ session.expires_at }}</span>
+            </td>
+            <td>
+              <span class="ip-address">{{ session.ip_address }}</span>
+            </td>
+            <td>
+              <span class="device-info">{{ session.user_agent }}</span>
+            </td>
+            <td>
+              <form method="POST" action="{{ url_for('auth.revoke_session_ui', session_id=session.id) }}">
+                <button type="submit" class="revoke-btn">Revoke</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
     </table>
   {% else %}
-    <p>No active sessions found.</p>
+    <div class="empty-state">
+      <div class="empty-state-icon">🔐</div>
+      <p>No active sessions found.</p>
+    </div>
   {% endif %}
 
-  <p><a href="/">← Back</a></p>
-</body>
-</html>
+  <a href="/" class="back-link">← Back to Dashboard</a>
+</div>
+{% endblock %}

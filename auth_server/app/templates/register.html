@@ -1,8 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Register - KeyN{% endblock %}
+
+{% block content %}
+<div class="logo-container">
+  <img src="{{ url_for('static', filename='logos/light-mode-keyn-logo.svg') }}" 
+       alt="KeyN Logo" class="logo logo-light">
+  <img src="{{ url_for('static', filename='logos/dark-mode-keyn-logo.svg') }}" 
+       alt="KeyN Logo" class="logo logo-dark">
+</div>
+
+<h2>Create account</h2>
+<p class="subtitle">Join KeyN and access all connected apps</p>
+
 <form method="POST">
   {{ form.hidden_tag() }}
-  {{ form.username.label }} {{ form.username(size=32) }}<br>
-  {{ form.email.label }} {{ form.email(size=32) }}<br>
-  {{ form.password.label }} {{ form.password(size=32) }}<br>
-  {{ form.confirm.label }} {{ form.confirm(size=32) }}<br>
-  {{ form.submit() }}
+  
+  <div class="form-group">
+    {{ form.username.label(class="form-label") }}
+    {{ form.username(size=32, class="form-input", placeholder="Choose a username") }}
+    {% for error in form.username.errors %}
+      <span class="error-message">{{ error }}</span>
+    {% endfor %}
+  </div>
+  
+  <div class="form-group">
+    {{ form.email.label(class="form-label") }}
+    {{ form.email(size=32, class="form-input", placeholder="Enter your email") }}
+    {% for error in form.email.errors %}
+      <span class="error-message">{{ error }}</span>
+    {% endfor %}
+  </div>
+  
+  <div class="form-group">
+    {{ form.password.label(class="form-label") }}
+    {{ form.password(size=32, class="form-input", placeholder="Create a password") }}
+    {% for error in form.password.errors %}
+      <span class="error-message">{{ error }}</span>
+    {% endfor %}
+  </div>
+  
+  <div class="form-group">
+    {{ form.confirm.label(class="form-label") }}
+    {{ form.confirm(size=32, class="form-input", placeholder="Confirm your password") }}
+    {% for error in form.confirm.errors %}
+      <span class="error-message">{{ error }}</span>
+    {% endfor %}
+  </div>
+  
+  {{ form.submit(class="submit-btn") }}
 </form>
+
+<div class="link-container">
+  <p>Already have an account? <a href="{{ url_for('auth.login') }}">Sign in here</a></p>
+</div>
+{% endblock %}

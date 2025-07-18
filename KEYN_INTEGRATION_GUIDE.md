@@ -4,7 +4,13 @@
 
 ## 🎯 Overview
 
-This guide shows you how to integrate KeyN authentication into any web application (Flask, Django, Node.js, etc.). After integration, users will be able to login once with KeyN and access all your connected applications seamlessly.
+This guide shows you how to integrate KeyN Single Sign-On authentication into any web application. KeyN uses a domain-wide `keyn_session` cookie approach that provides seamless SSO across all your `.nolanbc.ca` subdomains while avoiding conflicts with other services.
+
+**Key Features:**
+- ✅ **Seamless SSO**: Users login once and access all apps without redirects
+- ✅ **Safe Cookie Design**: Uses `keyn_session` name to prevent conflicts
+- ✅ **Fallback Support**: API token validation for additional security
+- ✅ **Simple Integration**: Just include cookies in requests to KeyN API
 
 ---
 

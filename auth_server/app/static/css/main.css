@@ -1,0 +1,458 @@
+/* KeyN Authentication System - Main Styles */
+
+/* CSS Variables for Light Mode */
+:root {
+  --primary-color: #2563eb;
+  --primary-hover: #1d4ed8;
+  --secondary-color: #64748b;
+  --bg-color: #ffffff;
+  --card-bg: #f8fafc;
+  --text-color: #1e293b;
+  --border-color: #e2e8f0;
+  --error-color: #ef4444;
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* CSS Variables for Dark Mode */
+[data-theme="dark"] {
+  --primary-color: #3b82f6;
+  --primary-hover: #2563eb;
+  --secondary-color: #94a3b8;
+  --bg-color: #0f172a;
+  --card-bg: #1e293b;
+  --text-color: #f1f5f9;
+  --border-color: #334155;
+  --error-color: #f87171;
+  --success-color: #34d399;
+  --warning-color: #fbbf24;
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+}
+
+/* Global Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  line-height: 1.6;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: var(--card-bg);
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 20px;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow);
+  z-index: 1000;
+}
+
+.theme-toggle:hover {
+  background: var(--primary-color);
+  color: white;
+  transform: scale(1.1);
+}
+
+.theme-toggle .sun-icon {
+  display: block;
+}
+
+.theme-toggle .moon-icon {
+  display: none;
+}
+
+[data-theme="dark"] .theme-toggle .sun-icon {
+  display: none;
+}
+
+[data-theme="dark"] .theme-toggle .moon-icon {
+  display: block;
+}
+
+/* Common Layout Styles */
+.container {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 20px;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 40px;
+  width: 100%;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.logo-container {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.logo {
+  width: 120px;
+  height: auto;
+  margin-bottom: 20px;
+  transition: transform 0.3s ease;
+}
+
+.logo:hover {
+  transform: scale(1.05);
+}
+
+.logo-light {
+  display: block;
+}
+
+.logo-dark {
+  display: none;
+}
+
+[data-theme="dark"] .logo-light {
+  display: none;
+}
+
+[data-theme="dark"] .logo-dark {
+  display: block;
+}
+
+/* Typography */
+h1, h2 {
+  color: var(--text-color);
+  margin-bottom: 8px;
+  font-weight: 600;
+  text-align: center;
+}
+
+h1 {
+  font-size: 28px;
+}
+
+h2 {
+  font-size: 24px;
+}
+
+.subtitle {
+  color: var(--secondary-color);
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 14px;
+}
+
+/* Form Styles */
+.form-group {
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: var(--text-color);
+  font-size: 14px;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+textarea,
+select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 16px;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.error-message {
+  color: var(--error-color);
+  font-size: 13px;
+  margin-top: 5px;
+  display: block;
+}
+
+/* Button Styles */
+.btn,
+.submit-btn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.btn {
+  padding: 12px 24px;
+  margin: 8px 8px 8px 0;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 14px;
+  margin-top: 10px;
+}
+
+.btn:hover,
+.submit-btn:hover {
+  background: var(--primary-hover);
+}
+
+.btn:active,
+.submit-btn:active {
+  transform: translateY(1px);
+}
+
+.btn-danger {
+  background-color: var(--error-color);
+}
+
+.btn-danger:hover {
+  background-color: #dc2626;
+}
+
+.btn-success {
+  background-color: var(--success-color);
+}
+
+.btn-success:hover {
+  background-color: #059669;
+}
+
+.btn-demo {
+  background: var(--success-color);
+}
+
+.btn-demo:hover {
+  background: #059669;
+}
+
+/* Links */
+.link-container {
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.link-container a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.link-container a:hover {
+  text-decoration: underline;
+}
+
+/* Alert Styles */
+.alert {
+  padding: 15px;
+  margin: 15px 0;
+  border-radius: 8px;
+  border: 1px solid;
+}
+
+.alert-success {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: var(--success-color);
+  border-color: var(--success-color);
+}
+
+.alert-error {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--error-color);
+  border-color: var(--error-color);
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .container {
+    padding: 10px;
+  }
+  
+  .card {
+    padding: 30px 20px;
+  }
+  
+  .logo {
+    width: 100px;
+  }
+  
+  .theme-toggle {
+    top: 15px;
+    right: 15px;
+    width: 45px;
+    height: 45px;
+    font-size: 18px;
+  }
+}
+
+/* Smooth transitions for theme changes */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Sessions-specific styles */
+.sessions-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.sessions-table th {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  padding: 15px 12px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.sessions-table td {
+  padding: 15px 12px;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+.sessions-table tr:hover {
+  background-color: var(--bg-color);
+}
+
+.sessions-table tr:last-child td {
+  border-bottom: none;
+}
+
+.revoke-btn {
+  background-color: var(--error-color);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.revoke-btn:hover {
+  background-color: #dc2626;
+}
+
+.revoke-btn:active {
+  transform: translateY(1px);
+}
+
+.device-info {
+  font-size: 13px;
+  color: var(--secondary-color);
+  max-width: 200px;
+  word-break: break-word;
+}
+
+.timestamp {
+  font-size: 13px;
+  color: var(--secondary-color);
+}
+
+.ip-address {
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+  font-size: 13px;
+  background-color: var(--bg-color);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+  margin-top: 20px;
+  padding: 10px 0;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--secondary-color);
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+/* Mobile responsive styles for sessions */
+@media (max-width: 768px) {
+  .sessions-table {
+    font-size: 14px;
+  }
+  
+  .sessions-table th,
+  .sessions-table td {
+    padding: 10px 8px;
+  }
+  
+  .device-info {
+    max-width: 150px;
+  }
+  
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .logo {
+    margin-bottom: 15px;
+  }
+}

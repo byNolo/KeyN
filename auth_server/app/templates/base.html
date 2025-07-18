@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}KeyN{% endblock %}</title>
+  
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  
+  <!-- Additional CSS -->
+  {% block additional_css %}{% endblock %}
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logos/light-mode-keyn-logo.svg') }}">
+  
+  <!-- Theme color for mobile browsers -->
+  <meta name="theme-color" content="#2563eb">
+  
+  <!-- Open Graph / Social Media -->
+  <meta property="og:title" content="{% block og_title %}KeyN - Unified Authentication{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}Login once. Access everything.{% endblock %}">
+  <meta property="og:type" content="website">
+  
+  <!-- Additional head content -->
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <!-- Main content -->
+  <div class="container">
+    <div class="card">
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+  
+  <!-- JavaScript -->
+  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+  
+  <!-- Additional JavaScript -->
+  {% block additional_js %}{% endblock %}
+  
+  <!-- Inline scripts -->
+  {% block scripts %}{% endblock %}
+</body>
+</html>

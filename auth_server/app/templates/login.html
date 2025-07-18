@@ -1,29 +1,41 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Login - KeyN</title>
-</head>
-<body>
-  <h2>KeyN Login</h2>
-  <form method="POST">
-    {{ form.hidden_tag() }}
-    <div>
-      {{ form.username.label }}<br>
-      {{ form.username(size=32) }}<br>
-      {% for error in form.username.errors %}
-        <small style="color: red">{{ error }}</small>
-      {% endfor %}
-    </div>
-    <div>
-      {{ form.password.label }}<br>
-      {{ form.password(size=32) }}<br>
-      {% for error in form.password.errors %}
-        <small style="color: red">{{ error }}</small>
-      {% endfor %}
-    </div>
-    <div>
-      {{ form.submit() }}
-    </div>
-  </form>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Login - KeyN{% endblock %}
+
+{% block content %}
+<div class="logo-container">
+  <img src="{{ url_for('static', filename='logos/light-mode-keyn-logo.svg') }}" 
+       alt="KeyN Logo" class="logo logo-light">
+  <img src="{{ url_for('static', filename='logos/dark-mode-keyn-logo.svg') }}" 
+       alt="KeyN Logo" class="logo logo-dark">
+</div>
+
+<h2>Welcome back</h2>
+<p class="subtitle">Sign in to your KeyN account</p>
+
+<form method="POST">
+  {{ form.hidden_tag() }}
+  
+  <div class="form-group">
+    {{ form.username.label(class="form-label") }}
+    {{ form.username(size=32, class="form-input", placeholder="Enter your username") }}
+    {% for error in form.username.errors %}
+      <span class="error-message">{{ error }}</span>
+    {% endfor %}
+  </div>
+  
+  <div class="form-group">
+    {{ form.password.label(class="form-label") }}
+    {{ form.password(size=32, class="form-input", placeholder="Enter your password") }}
+    {% for error in form.password.errors %}
+      <span class="error-message">{{ error }}</span>
+    {% endfor %}
+  </div>
+  
+  {{ form.submit(class="submit-btn") }}
+</form>
+
+<div class="link-container">
+  <p>Don't have an account? <a href="{{ url_for('auth.register') }}">Sign up here</a></p>
+</div>
+{% endblock %}

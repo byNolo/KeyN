@@ -4,119 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KeyN Admin - Security Management</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        h1, h2 {
-            color: #333;
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 10px;
-        }
-        .section {
-            margin: 30px 0;
-        }
-        .form-group {
-            margin: 15px 0;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        input, textarea, select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            box-sizing: border-box;
-        }
-        button {
-            background-color: #007bff;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 5px 5px 5px 0;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        .danger {
-            background-color: #dc3545;
-        }
-        .danger:hover {
-            background-color: #c82333;
-        }
-        .success {
-            background-color: #28a745;
-        }
-        .success:hover {
-            background-color: #218838;
-        }
-        .alert {
-            padding: 15px;
-            margin: 15px 0;
-            border-radius: 5px;
-        }
-        .alert-success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .alert-error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-        }
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        th {
-            background-color: #f8f9fa;
-            font-weight: bold;
-        }
-        .fingerprint {
-            font-family: monospace;
-            word-break: break-all;
-        }
-        .status-success {
-            color: #28a745;
-            font-weight: bold;
-        }
-        .status-failed {
-            color: #dc3545;
-            font-weight: bold;
-        }
-    </style>
+    
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logos/light-mode-keyn-logo.svg') }}">
 </head>
 <body>
-    <div class="container">
-        <h1>KeyN Security Management</h1>
+    <div class="admin-container">
+        <div class="admin-header">
+            <img src="{{ url_for('static', filename='logos/light-mode-keyn-logo.svg') }}" 
+                 alt="KeyN Logo" class="logo logo-light">
+            <img src="{{ url_for('static', filename='logos/dark-mode-keyn-logo.svg') }}" 
+                 alt="KeyN Logo" class="logo logo-dark">
+            <h1>KeyN Security Management</h1>
+        </div>
         
         <div id="alerts"></div>
 
         <!-- Ban IP Section -->
-        <div class="section">
+        <div class="admin-section">
             <h2>Ban IP Address</h2>
             <form id="banIpForm">
                 <div class="form-group">
@@ -131,12 +40,12 @@
                     <label for="ipDuration">Duration (hours, leave empty for permanent):</label>
                     <input type="number" id="ipDuration" name="ipDuration" placeholder="24">
                 </div>
-                <button type="submit" class="danger">Ban IP</button>
+                <button type="submit" class="btn btn-danger">Ban IP</button>
             </form>
         </div>
 
         <!-- Ban Device Section -->
-        <div class="section">
+        <div class="admin-section">
             <h2>Ban Device</h2>
             <form id="banDeviceForm">
                 <div class="form-group">
@@ -151,49 +60,52 @@
                     <label for="deviceDuration">Duration (hours, leave empty for permanent):</label>
                     <input type="number" id="deviceDuration" name="deviceDuration" placeholder="24">
                 </div>
-                <button type="submit" class="danger">Ban Device</button>
+                <button type="submit" class="btn btn-danger">Ban Device</button>
             </form>
         </div>
 
         <!-- Unban Section -->
-        <div class="section">
+        <div class="admin-section">
             <h2>Remove Bans</h2>
-            <div style="display: flex; gap: 20px;">
-                <div style="flex: 1;">
+            <div class="form-row">
+                <div>
                     <form id="unbanIpForm">
                         <div class="form-group">
                             <label for="unbanIpAddress">Unban IP Address:</label>
                             <input type="text" id="unbanIpAddress" name="unbanIpAddress" placeholder="192.168.1.1" required>
                         </div>
-                        <button type="submit" class="success">Unban IP</button>
+                        <button type="submit" class="btn btn-success">Unban IP</button>
                     </form>
                 </div>
-                <div style="flex: 1;">
+                <div>
                     <form id="unbanDeviceForm">
                         <div class="form-group">
                             <label for="unbanDeviceFingerprint">Unban Device:</label>
                             <input type="text" id="unbanDeviceFingerprint" name="unbanDeviceFingerprint" placeholder="Device fingerprint" required>
                         </div>
-                        <button type="submit" class="success">Unban Device</button>
+                        <button type="submit" class="btn btn-success">Unban Device</button>
                     </form>
                 </div>
             </div>
         </div>
 
         <!-- View Bans Section -->
-        <div class="section">
+        <div class="admin-section">
             <h2>Active Bans</h2>
-            <button onclick="loadBans()" class="success">Refresh Bans</button>
+            <button onclick="loadBans()" class="btn btn-success">Refresh Bans</button>
             <div id="bansContainer"></div>
         </div>
 
         <!-- Recent Login Attempts -->
-        <div class="section">
+        <div class="admin-section">
             <h2>Recent Login Attempts</h2>
-            <button onclick="loadLoginAttempts()" class="success">Load Recent Attempts</button>
+            <button onclick="loadLoginAttempts()" class="btn btn-success">Load Recent Attempts</button>
             <div id="attemptsContainer"></div>
         </div>
     </div>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 
     <script>
         function showAlert(message, type = 'success') {
@@ -329,13 +241,13 @@
                 
                 let html = '<h3>IP Bans</h3>';
                 if (data.ip_bans.length > 0) {
-                    html += '<table><tr><th>IP Address</th><th>Reason</th><th>Banned At</th><th>Expires At</th></tr>';
+                    html += '<table class="admin-table"><tr><th>IP Address</th><th>Reason</th><th>Banned At</th><th>Expires At</th></tr>';
                     data.ip_bans.forEach(ban => {
                         html += `<tr>
-                            <td>${ban.ip_address}</td>
+                            <td><span class="ip-address">${ban.ip_address}</span></td>
                             <td>${ban.reason}</td>
-                            <td>${new Date(ban.banned_at).toLocaleString()}</td>
-                            <td>${ban.expires_at ? new Date(ban.expires_at).toLocaleString() : 'Permanent'}</td>
+                            <td><span class="timestamp">${new Date(ban.banned_at).toLocaleString()}</span></td>
+                            <td><span class="timestamp">${ban.expires_at ? new Date(ban.expires_at).toLocaleString() : 'Permanent'}</span></td>
                         </tr>`;
                     });
                     html += '</table>';
@@ -345,13 +257,13 @@
 
                 html += '<h3>Device Bans</h3>';
                 if (data.device_bans.length > 0) {
-                    html += '<table><tr><th>Device Fingerprint</th><th>Reason</th><th>Banned At</th><th>Expires At</th></tr>';
+                    html += '<table class="admin-table"><tr><th>Device Fingerprint</th><th>Reason</th><th>Banned At</th><th>Expires At</th></tr>';
                     data.device_bans.forEach(ban => {
                         html += `<tr>
                             <td class="fingerprint">${ban.device_fingerprint}</td>
                             <td>${ban.reason}</td>
-                            <td>${new Date(ban.banned_at).toLocaleString()}</td>
-                            <td>${ban.expires_at ? new Date(ban.expires_at).toLocaleString() : 'Permanent'}</td>
+                            <td><span class="timestamp">${new Date(ban.banned_at).toLocaleString()}</span></td>
+                            <td><span class="timestamp">${ban.expires_at ? new Date(ban.expires_at).toLocaleString() : 'Permanent'}</span></td>
                         </tr>`;
                     });
                     html += '</table>';
@@ -371,14 +283,14 @@
                 const response = await fetch('/admin/login-attempts?per_page=20');
                 const data = await response.json();
                 
-                let html = '<table><tr><th>Time</th><th>IP Address</th><th>Username</th><th>Status</th><th>Device Fingerprint</th></tr>';
+                let html = '<table class="admin-table"><tr><th>Time</th><th>IP Address</th><th>Username</th><th>Status</th><th>Device Fingerprint</th></tr>';
                 
                 data.attempts.forEach(attempt => {
                     const statusClass = attempt.success ? 'status-success' : 'status-failed';
                     const statusText = attempt.success ? 'SUCCESS' : 'FAILED';
                     html += `<tr>
-                        <td>${new Date(attempt.timestamp).toLocaleString()}</td>
-                        <td>${attempt.ip_address}</td>
+                        <td><span class="timestamp">${new Date(attempt.timestamp).toLocaleString()}</span></td>
+                        <td><span class="ip-address">${attempt.ip_address}</span></td>
                         <td>${attempt.username_attempted || 'N/A'}</td>
                         <td class="${statusClass}">${statusText}</td>
                         <td class="fingerprint">${attempt.device_fingerprint || 'N/A'}</td>

@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from .models import User, RefreshToken
-from .forms import LoginForm
+from .forms import LoginForm, RegisterForm
 from . import db, login_manager
 from .security_utils import (
     get_real_ip, generate_device_fingerprint, is_ip_banned, is_device_banned,
@@ -56,9 +56,22 @@ def login():
             user.last_login = datetime.datetime.utcnow()
             db.session.commit()
             
-            login_user(user)
+            # Debug: Check user before login
+            print(f"DEBUG: About to login user {user.id} - {user.username}")
+            print(f"DEBUG: User.is_verified = {user.is_verified}")
+            
+            login_user(user, remember=True)  # Enable remember me
+            
+            # Debug: Check current_user after login
+            print(f"DEBUG: After login_user - current_user.is_authenticated = {current_user.is_authenticated}")
+            print(f"DEBUG: After login_user - current_user.id = {current_user.id if current_user.is_authenticated else 'Not authenticated'}")
+            
             session["token"] = generate_access_token(user.id)
             session["refresh_token"] = generate_refresh_token(user.id)
+            session.permanent = True  # Make session permanent
+            
+            print(f"DEBUG: Session after login = {dict(session)}")
+            
             redirect_url = request.args.get("redirect") or url_for("auth.user_info")
             return redirect(redirect_url)
         
@@ -101,6 +114,10 @@ def validate_token():
 def user_info():
     """Get user info - supports both session-based and token-based auth"""
     user = None
+    
+    # Debug information
+    print(f"DEBUG: current_user.is_authenticated = {current_user.is_authenticated if current_user else 'current_user is None'}")
+    print(f"DEBUG: session contents = {dict(session)}")
     
     # Try session-based authentication first (for same-domain)
     if current_user and current_user.is_authenticated:
@@ -207,7 +224,6 @@ def revoke_session(session_id):
     db.session.commit()
     return jsonify({"status": "revoked"})
 
-from .forms import RegisterForm
 from .auth_utils import send_verification_email
 from . import mail
 

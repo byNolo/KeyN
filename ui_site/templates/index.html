@@ -1,34 +1,80 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>KeyN – Unified Login</title>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
-    .btn { display: inline-block; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 3px; margin: 5px; }
-    .btn:hover { background: #0056b3; }
-    .demo { background: #28a745; }
-    .demo:hover { background: #1e7e34; }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KeyN – Unified Authentication</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ui.css') }}">
 </head>
 <body>
-  <h1>🔐 KeyN</h1>
-  <p>Login once. Access everything.</p>
+  <button class="theme-toggle" onclick="themeManager.toggleTheme()">🌙</button>
   
-  <h3>🚀 Live Demo</h3>
-  <a href="https://demo-keyn.nolanbc.ca" class="btn demo">Try KeyN Demo</a>
+  <div class="container">
+    <div class="header">
+      <img src="{{ url_for('static', filename='logos/light-mode-keyn-logo.svg') }}" 
+           alt="KeyN Logo" class="logo logo-light">
+      <img src="{{ url_for('static', filename='logos/dark-mode-keyn-logo.svg') }}" 
+           alt="KeyN Logo" class="logo logo-dark">
+      <h1>KeyN</h1>
+      <p class="tagline">Login once. Access everything.</p>
+    </div>
+    
+    <div class="section">
+      <h2>🚀 Live Demo</h2>
+      <p>Try KeyN's unified authentication system with our interactive demo.</p>
+      <a href="https://demo-keyn.nolanbc.ca" class="btn btn-success">Try KeyN Demo</a>
+    </div>
+    
+    <div class="section">
+      <h2>🔗 Authentication</h2>
+      <p>Access your KeyN account and manage your authentication settings.</p>
+      <a href="https://auth-keyn.nolanbc.ca/login" class="btn">Sign In</a>
+      <a href="https://auth-keyn.nolanbc.ca/register" class="btn">Create Account</a>
+    </div>
+    
+    <div class="section">
+      <h2>📖 About KeyN</h2>
+      <p>KeyN is a centralized authentication system that provides secure single sign-on (SSO) access to all your connected applications.</p>
+      
+      <div class="features">
+        <h3>Key Features</h3>
+        <ul>
+          <li>Single Sign-On (SSO) across all connected applications</li>
+          <li>Secure JWT-based authentication</li>
+          <li>Session management and monitoring</li>
+          <li>Multi-factor authentication support</li>
+          <li>Admin security controls and IP banning</li>
+          <li>Real-time login attempt monitoring</li>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="section">
+      <h2>🔌 Connected Applications</h2>
+      <div class="service-grid">
+        <div class="service-card">
+          <h3>Vinyl Vote</h3>
+          <p>Album rating and music discovery platform</p>
+          <span class="status status-online">Online</span>
+        </div>
+        <div class="service-card">
+          <h3>SideQuest</h3>
+          <p>Challenge and quest management system</p>
+          <span class="status status-online">Online</span>
+        </div>
+        <div class="service-card">
+          <h3>More Coming Soon</h3>
+          <p>Additional applications will be integrated with KeyN</p>
+          <span class="status status-offline">Pending</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <p>KeyN Authentication System - Secure, Fast, Unified</p>
+    </div>
+  </div>
   
-  <h3>🔗 Authentication</h3>
-  <a href="https://auth-keyn.nolanbc.ca/login" class="btn">Login to KeyN</a>
-  <a href="https://auth-keyn.nolanbc.ca/register" class="btn">Register</a>
-  
-  <h3>📖 About KeyN</h3>
-  <p>KeyN is a centralized authentication system that allows you to login once and access all connected applications with a single sign-on experience.</p>
-  
-  <p><strong>Connected Apps:</strong></p>
-  <ul>
-    <li>Vinyl Vote - Album rating application</li>
-    <li>SideQuest - Challenge and quest platform</li>
-    <li>More coming soon...</li>
-  </ul>
+  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 </body>
 </html>
