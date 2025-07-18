@@ -4,11 +4,42 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KeyN – Unified Authentication</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/ui.css') }}">
+  
+  <!-- Immediate theme application to prevent flash -->
+  <script>
+    (function() {
+      // Check URL parameter first
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlTheme = urlParams.get('theme');
+      
+      if (urlTheme && (urlTheme === 'light' || urlTheme === 'dark')) {
+        document.documentElement.setAttribute('data-theme', urlTheme);
+        localStorage.setItem('keyn-theme', urlTheme);
+      } else {
+        // Check localStorage
+        const savedTheme = localStorage.getItem('keyn-theme');
+        if (savedTheme) {
+          document.documentElement.setAttribute('data-theme', savedTheme);
+        } else {
+          // Default to system preference
+          const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          document.documentElement.setAttribute('data-theme', systemPrefersDark ? 'dark' : 'light');
+        }
+      }
+    })();
+  </script>
+  
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ui.css') }}?v={{ cache_version }}">
+  
+  <!-- Favicon with theme support -->
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logos/favicon-light.svg') }}?v={{ cache_version }}" media="(prefers-color-scheme: light)">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logos/favicon-dark.svg') }}?v={{ cache_version }}" media="(prefers-color-scheme: dark)">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logos/favicon-light.svg') }}?v={{ cache_version }}">
+  
+  <!-- Theme color for mobile browsers -->
+  <meta name="theme-color" content="#2563eb">
 </head>
 <body>
-  <button class="theme-toggle" onclick="themeManager.toggleTheme()">🌙</button>
-  
   <div class="container">
     <div class="header">
       <img src="{{ url_for('static', filename='logos/light-mode-keyn-logo.svg') }}" 
@@ -55,17 +86,17 @@
         <div class="service-card">
           <h3>Vinyl Vote</h3>
           <p>Album rating and music discovery platform</p>
-          <span class="status status-online">Online</span>
+          <span class="status status-pending">Pending</span>
         </div>
         <div class="service-card">
           <h3>SideQuest</h3>
           <p>Challenge and quest management system</p>
-          <span class="status status-online">Online</span>
+          <span class="status status-pending">Pending</span>
         </div>
         <div class="service-card">
           <h3>More Coming Soon</h3>
           <p>Additional applications will be integrated with KeyN</p>
-          <span class="status status-offline">Pending</span>
+          <span class="status status-pending">Coming Soon</span>
         </div>
       </div>
     </div>
@@ -75,6 +106,12 @@
     </div>
   </div>
   
-  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/theme.js') }}?v={{ cache_version }}"></script>
+  <script>
+    // Initialize theme manager after DOM is loaded
+    window.addEventListener('DOMContentLoaded', function() {
+      window.themeManager = new ThemeManager();
+    });
+  </script>
 </body>
 </html>

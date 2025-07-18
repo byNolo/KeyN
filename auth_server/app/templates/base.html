@@ -5,14 +5,40 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}KeyN{% endblock %}</title>
   
+  <!-- Immediate theme application to prevent flash -->
+  <script>
+    (function() {
+      // Check URL parameter first
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlTheme = urlParams.get('theme');
+      
+      if (urlTheme && (urlTheme === 'light' || urlTheme === 'dark')) {
+        document.documentElement.setAttribute('data-theme', urlTheme);
+        localStorage.setItem('keyn-theme', urlTheme);
+      } else {
+        // Check localStorage
+        const savedTheme = localStorage.getItem('keyn-theme');
+        if (savedTheme) {
+          document.documentElement.setAttribute('data-theme', savedTheme);
+        } else {
+          // Default to system preference
+          const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          document.documentElement.setAttribute('data-theme', systemPrefersDark ? 'dark' : 'light');
+        }
+      }
+    })();
+  </script>
+  
   <!-- Main CSS -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v={{ cache_version }}">
   
   <!-- Additional CSS -->
   {% block additional_css %}{% endblock %}
   
-  <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logos/light-mode-keyn-logo.svg') }}">
+  <!-- Favicon with theme support -->
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logos/favicon-light.svg') }}?v={{ cache_version }}" media="(prefers-color-scheme: light)">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logos/favicon-dark.svg') }}?v={{ cache_version }}" media="(prefers-color-scheme: dark)">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logos/favicon-light.svg') }}">
   
   <!-- Theme color for mobile browsers -->
   <meta name="theme-color" content="#2563eb">
@@ -34,7 +60,13 @@
   </div>
   
   <!-- JavaScript -->
-  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/theme.js') }}?v={{ cache_version }}"></script>
+  <script>
+    // Initialize theme manager after DOM is loaded
+    window.addEventListener('DOMContentLoaded', function() {
+      window.themeManager = new ThemeManager();
+    });
+  </script>
   
   <!-- Additional JavaScript -->
   {% block additional_js %}{% endblock %}

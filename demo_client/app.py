@@ -233,8 +233,9 @@ def auth_callback():
 def logout():
     """Logout from KeyN and clear local session"""
     session.clear()
-    # Redirect to KeyN logout
-    logout_url = f'{AUTH_SERVER_URL}/logout'
+    # Redirect to KeyN logout with redirect parameter to come back to this client
+    redirect_url = f'{CLIENT_URL}/'
+    logout_url = f'{AUTH_SERVER_URL}/logout?' + urlencode({'redirect': redirect_url})
     return redirect(logout_url)
 
 @app.route('/protected')

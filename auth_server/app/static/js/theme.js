@@ -83,10 +83,11 @@ class ThemeManager {
   }
 }
 
+// Don't auto-initialize - let the page handle it
 // Initialize theme manager when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-  window.themeManager = new ThemeManager();
-});
+// document.addEventListener('DOMContentLoaded', () => {
+//   window.themeManager = new ThemeManager();
+// });
 
 // Utility function to get theme parameter from URL
 function getThemeFromUrl() {

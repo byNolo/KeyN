@@ -6,23 +6,17 @@ class ThemeManager {
   }
 
   init() {
-    // Check URL parameter first
+    // Get current theme from data attribute (already set by inline script)
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    this.currentTheme = currentTheme || 'light';
+    
+    // Check URL parameter to see if we need to update
     const urlParams = new URLSearchParams(window.location.search);
     const urlTheme = urlParams.get('theme');
     
-    if (urlTheme && (urlTheme === 'light' || urlTheme === 'dark')) {
+    if (urlTheme && (urlTheme === 'light' || urlTheme === 'dark') && urlTheme !== this.currentTheme) {
       this.setTheme(urlTheme);
       localStorage.setItem('keyn-theme', urlTheme);
-    } else {
-      // Check localStorage
-      const savedTheme = localStorage.getItem('keyn-theme');
-      if (savedTheme) {
-        this.setTheme(savedTheme);
-      } else {
-        // Default to system preference
-        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        this.setTheme(systemPrefersDark ? 'dark' : 'light');
-      }
     }
 
     // Listen for system theme changes
@@ -54,19 +48,30 @@ class ThemeManager {
   }
 
   createThemeToggle() {
-    const themeToggle = document.createElement('button');
-    themeToggle.className = 'theme-toggle';
+    // Check if a theme toggle already exists
+    let themeToggle = document.querySelector('.theme-toggle');
+    
+    if (!themeToggle) {
+      // Create new theme toggle button
+      themeToggle = document.createElement('button');
+      themeToggle.className = 'theme-toggle';
+      document.body.appendChild(themeToggle);
+    }
+    
+    // Set up the button content and event listener
     themeToggle.setAttribute('aria-label', 'Toggle theme');
     themeToggle.innerHTML = `
       <span class="sun-icon">☀️</span>
       <span class="moon-icon">🌙</span>
     `;
     
+    // Remove any existing event listeners and add new one
+    themeToggle.replaceWith(themeToggle.cloneNode(true));
+    themeToggle = document.querySelector('.theme-toggle');
+    
     themeToggle.addEventListener('click', () => {
       this.toggleTheme();
     });
-
-    document.body.appendChild(themeToggle);
   }
 
   // Method to get current theme
@@ -83,10 +88,11 @@ class ThemeManager {
   }
 }
 
+// Don't auto-initialize - let the page handle it
 // Initialize theme manager when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-  window.themeManager = new ThemeManager();
-});
+// document.addEventListener('DOMContentLoaded', () => {
+//   window.themeManager = new ThemeManager();
+// });
 
 // Utility function to get theme parameter from URL
 function getThemeFromUrl() {

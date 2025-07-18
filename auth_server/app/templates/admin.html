@@ -6,8 +6,16 @@
     <title>KeyN Admin - Security Management</title>
     
     <!-- Main CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v={{ cache_version }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v={{ cache_version }}">
+    
+    <!-- Favicon with theme support -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logos/favicon-light.svg') }}?v={{ cache_version }}" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logos/favicon-dark.svg') }}?v={{ cache_version }}" media="(prefers-color-scheme: dark)">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logos/favicon-light.svg') }}?v={{ cache_version }}">
+    
+    <!-- Theme color for mobile browsers -->
+    <meta name="theme-color" content="#2563eb">
     
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logos/light-mode-keyn-logo.svg') }}">
@@ -105,7 +113,7 @@
     </div>
 
     <!-- JavaScript -->
-    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/theme.js') }}?v={{ cache_version }}"></script>
 
     <script>
         function showAlert(message, type = 'success') {

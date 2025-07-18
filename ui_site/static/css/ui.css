@@ -1,42 +1,31 @@
 /* UI Site Styles */
 :root {
-  --primary-color: #2563eb;
-  --primary-hover: #1d4ed8;
-  --secondary-color: #64748b;
-  --bg-color: #ffffff;
-  --card-bg: #f8fafc;
-  --text-color: #1e293b;
-  --border-color: #e2e8f0;
-  --success-color: #10b981;
-  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --primary-color: #157347;       /* Match the green key */
+  --primary-hover: #0f5132;       /* Slightly darker for hover */
+  --secondary-color: #3b3b3b;     /* Neutral dark grey */
+  --bg-color: #ffffff;            /* White background */
+  --card-bg: #f1f5f4;             /* Very light grey for contrast */
+  --text-color: #1e1e1e;          /* Darker for readability */
+  --border-color: #d1d5db;        /* Subtle light border */
+  --error-color: #dc2626;         /* Rich red */
+  --success-color: #198754;       /* Bootstrap-style green */
+  --warning-color: #f59e0b;       /* Orange-yellow */
+  --shadow: 0 4px 6px -1px rgba(21, 115, 71, 0.1), 0 2px 4px -1px rgba(21, 115, 71, 0.06);
 }
 
-/* Dark Mode Support */
-:root[data-theme="dark"] {
-  --primary-color: #3b82f6;
-  --primary-hover: #2563eb;
-  --secondary-color: #94a3b8;
-  --bg-color: #0f172a;
-  --card-bg: #1e293b;
-  --text-color: #f1f5f9;
-  --border-color: #334155;
-  --success-color: #34d399;
+/* CSS Variables for Dark Mode */
+[data-theme="dark"] {
+  --primary-color: #34d399;       /* Soft mint green on dark */
+  --primary-hover: #10b981;       /* Bright green for hover */
+  --secondary-color: #cbd5e1;     /* Soft light grey */
+  --bg-color: #0b0f12;            /* Deep black-blue */
+  --card-bg: #1a1f24;             /* Subtle elevation */
+  --text-color: #f8fafc;          /* Off-white text */
+  --border-color: #334155;        /* Subtle grey */
+  --error-color: #f87171;         /* Coral red */
+  --success-color: #22c55e;       /* Bright green */
+  --warning-color: #fbbf24;       /* Warm amber */
   --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-}
-
-/* Auto Dark Mode */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --primary-color: #3b82f6;
-    --primary-hover: #2563eb;
-    --secondary-color: #94a3b8;
-    --bg-color: #0f172a;
-    --card-bg: #1e293b;
-    --text-color: #f1f5f9;
-    --border-color: #334155;
-    --success-color: #34d399;
-    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-  }
 }
 
 /* Theme Toggle */
@@ -60,6 +49,23 @@
 .theme-toggle:hover {
   background: var(--bg-color);
   border-color: var(--primary-color);
+}
+
+/* Theme toggle icons */
+.theme-toggle .sun-icon {
+  display: none;
+}
+
+.theme-toggle .moon-icon {
+  display: inline;
+}
+
+[data-theme="dark"] .theme-toggle .sun-icon {
+  display: inline;
+}
+
+[data-theme="dark"] .theme-toggle .moon-icon {
+  display: none;
 }
 
 /* Base Styles */
@@ -106,11 +112,11 @@ body {
   display: none;
 }
 
-:root[data-theme="dark"] .logo-light {
+[data-theme="dark"] .logo-light {
   display: none;
 }
 
-:root[data-theme="dark"] .logo-dark {
+[data-theme="dark"] .logo-dark {
   display: block;
 }
 
@@ -190,6 +196,16 @@ h1 {
 .status-online {
   background-color: rgba(16, 185, 129, 0.1);
   color: var(--success-color);
+}
+
+.status-maintenance {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.status-pending {
+  background-color: rgba(234, 179, 8, 0.1);
+  color: #eab308;
 }
 
 .status-offline {

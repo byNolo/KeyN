@@ -82,18 +82,36 @@ def login():
     return render_template("login.html", form=form)
 
 @auth_bp.route("/logout", methods=["GET", "POST"])
-@login_required
 def logout():
-    # Revoke all refresh tokens for user
-    RefreshToken.query.filter_by(user_id=current_user.id).update({ "revoked": True })
-    db.session.commit()
-
-    logout_user()
+    # Check if user is logged in
+    if current_user.is_authenticated:
+        # Revoke all refresh tokens for user
+        RefreshToken.query.filter_by(user_id=current_user.id).update({ "revoked": True })
+        db.session.commit()
+        
+        logout_user()
+    
+    # Clear session regardless of login status
     session.clear()
     
     # Handle both GET and POST requests
     if request.method == "GET":
-        # For GET requests (like from demo client), redirect to login page
+        # Check for redirect parameter (like from demo client)
+        redirect_url = request.args.get("redirect")
+        if redirect_url:
+            # Validate that redirect URL is from allowed domains for security
+            allowed_domains = [
+                'https://demo-keyn.nolanbc.ca',
+                'https://ui-keyn.nolanbc.ca',
+                'http://localhost:6002',  # For development
+                'http://localhost:6001'   # For development
+            ]
+            
+            # Check if redirect URL starts with any allowed domain
+            if any(redirect_url.startswith(domain) for domain in allowed_domains):
+                return redirect(redirect_url)
+        
+        # Default: redirect to login page
         return redirect(url_for("auth.login"))
     else:
         # For POST requests (API calls), return JSON response

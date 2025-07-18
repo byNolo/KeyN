@@ -5,6 +5,7 @@ from flask_mail import Mail
 from flask_cors import CORS
 import sys
 import os
+import time
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from config import Config
 
@@ -15,6 +16,9 @@ mail = Mail()
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    
+    # Generate cache busting version based on app start time
+    app.config['CACHE_VERSION'] = str(int(time.time()))
 
     # Configure CORS for client apps
     if app.config.get('ALLOWED_ORIGINS'):
@@ -39,5 +43,10 @@ def create_app():
 
     from .routes import auth_bp
     app.register_blueprint(auth_bp)
+    
+    # Add cache busting version to template context
+    @app.context_processor
+    def inject_cache_version():
+        return dict(cache_version=app.config['CACHE_VERSION'])
 
     return app
