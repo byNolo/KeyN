@@ -82,8 +82,64 @@ def logout():
     # Clear local session
     session.clear()
     
-    # Redirect to KeyN logout (will logout from all apps)
-    return redirect('https://auth-keyn.nolanbc.ca/logout')
+    # Redirect to KeyN logout with redirect parameter to return to this app
+    from urllib.parse import urlencode
+    redirect_url = request.url_root  # Your app's home page
+    logout_url = 'https://auth-keyn.nolanbc.ca/logout?' + urlencode({'redirect': redirect_url})
+    return redirect(logout_url)
+```
+
+### 3. **Add Authentication Callback (Optional)**
+
+For better user experience, you can add a callback route that handles the return from KeyN:
+
+```python
+@app.route('/auth/callback')
+def auth_callback():
+    """Handle return from KeyN authentication"""
+    # The KeyN session cookie should now be available
+    # Simply redirect to home page - authentication will work automatically
+    return redirect('/')
+```
+
+Then modify your login redirect to use the callback:
+
+```python
+def require_keyn_auth():
+    """Check if user is authenticated via KeyN, redirect if not"""
+    
+    # Check if we already have user in session
+    if session.get('keyn_user_id'):
+        return {
+            'user_id': session.get('keyn_user_id'),
+            'username': session.get('keyn_username')
+        }
+    
+    # Try to authenticate with KeyN using cookies
+    try:
+        response = requests.get(
+            'https://auth-keyn.nolanbc.ca/api/user',
+            cookies=request.cookies,
+            timeout=5
+        )
+        
+        if response.status_code == 200:
+            user_data = response.json()
+            # Store in session for future requests
+            session['keyn_user_id'] = user_data['user_id']
+            session['keyn_username'] = user_data['username']
+            return user_data
+            
+    except requests.RequestException:
+        pass
+    
+    # Not authenticated - redirect to KeyN login
+    callback_url = request.url_root + 'auth/callback'
+    login_url = 'https://auth-keyn.nolanbc.ca/login?' + urlencode({
+        'redirect': callback_url
+    })
+    
+    return redirect(login_url)
 ```
 
 That's it! Your app now has KeyN authentication. 🎉
@@ -168,14 +224,19 @@ class KeyNAuth:
             }
         return None
     
-    def logout_user(self):
+    def logout_user(self, return_url=None):
         """Logout user from local session and redirect to KeyN logout"""
         # Clear local session
         for key in ['keyn_user_id', 'keyn_username', 'keyn_authenticated']:
             session.pop(key, None)
         
-        # Redirect to KeyN logout (clears SSO session)
-        return redirect(f'{self.auth_server}/logout')
+        # Prepare redirect URL (where to go after logout)
+        if return_url is None:
+            return_url = request.url_root
+        
+        # Redirect to KeyN logout with redirect parameter
+        logout_url = f'{self.auth_server}/logout?' + urlencode({'redirect': return_url})
+        return redirect(logout_url)
     
     def validate_token(self, token):
         """Validate a KeyN access token (for API endpoints)"""
@@ -450,6 +511,61 @@ def api_data():
     })
 ```
 
+### **Cross-Domain Token Authentication**
+
+For applications that need secure API tokens (optional, for advanced use cases):
+
+```python
+def get_keyn_access_token():
+    """Get a secure access token from KeyN for API calls"""
+    try:
+        response = requests.post(
+            'https://auth-keyn.nolanbc.ca/api/cross-domain-auth',
+            json={'client_domain': request.url_root},
+            cookies=request.cookies,
+            headers={'Content-Type': 'application/json'},
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            token_data = response.json()
+            return token_data['access_token']
+            
+    except requests.RequestException as e:
+        print(f"Failed to get access token: {e}")
+    
+    return None
+
+# Usage in your authentication flow:
+@app.route('/auth/callback')
+def auth_callback():
+    """Enhanced callback with token support"""
+    # Get user info via cookies
+    try:
+        response = requests.get(
+            'https://auth-keyn.nolanbc.ca/api/user',
+            cookies=request.cookies,
+            timeout=5
+        )
+        
+        if response.status_code == 200:
+            user_data = response.json()
+            session['keyn_user_id'] = user_data['user_id']
+            session['keyn_username'] = user_data['username']
+            
+            # Optionally get access token for API calls
+            access_token = get_keyn_access_token()
+            if access_token:
+                session['keyn_access_token'] = access_token
+            
+            return redirect('/')
+            
+    except requests.RequestException:
+        pass
+    
+    return redirect('/login?error=auth_failed')
+```
+
 ---
 
 ## 🌐 Frontend JavaScript Integration
@@ -487,7 +603,9 @@ class KeyNAuth {
     }
     
     logout() {
-        window.location.href = `${this.authServer}/logout`;
+        // Redirect to KeyN logout with redirect back to this app
+        const returnUrl = encodeURIComponent(window.location.origin);
+        window.location.href = `${this.authServer}/logout?redirect=${returnUrl}`;
     }
     
     async makeAuthenticatedRequest(url, options = {}) {
@@ -563,6 +681,73 @@ Make sure your domain is added to KeyN's CORS settings:
 
 ---
 
+## 📋 KeyN API Endpoints Reference
+
+Here are the KeyN API endpoints available for integration:
+
+### **Core Authentication Endpoints**
+
+| Endpoint | Method | Description | Authentication |
+|----------|---------|-------------|----------------|
+| `/login` | GET | Login page with redirect support | None |
+| `/logout` | GET | Logout with redirect support | None |
+| `/register` | GET/POST | User registration | None |
+| `/api/user` | GET | Get current user info | Cookie/Session |
+| `/api/validate-token` | GET | Validate access token | None |
+| `/api/cross-domain-auth` | POST | Get access token for cross-domain | Cookie/Session |
+| `/health` | GET | Health check endpoint | None |
+
+### **API Usage Examples**
+
+```python
+# Get current user info
+response = requests.get(
+    'https://auth-keyn.nolanbc.ca/api/user',
+    cookies=request.cookies
+)
+# Returns: {'user_id': 123, 'username': 'john_doe'}
+
+# Validate an access token
+response = requests.get(
+    'https://auth-keyn.nolanbc.ca/api/validate-token',
+    params={'token': 'your-token-here'}
+)
+# Returns: {'valid': True, 'user_id': 123}
+
+# Get cross-domain access token
+response = requests.post(
+    'https://auth-keyn.nolanbc.ca/api/cross-domain-auth',
+    json={'client_domain': 'https://yourapp.com'},
+    cookies=request.cookies
+)
+# Returns: {'access_token': 'abc123...', 'user_id': 123, 'username': 'john_doe', 'expires_in': 900}
+```
+
+### **Response Formats**
+
+All API endpoints return JSON responses:
+
+```json
+// Success response for /api/user
+{
+  "user_id": 123,
+  "username": "john_doe"
+}
+
+// Error response
+{
+  "error": "Authentication required"
+}
+
+// Token validation response
+{
+  "valid": true,
+  "user_id": 123
+}
+```
+
+---
+
 ## 🧪 Testing Your Integration
 
 ### **1. Basic Flow Test**
@@ -620,6 +805,28 @@ curl -H "Authorization: Bearer YOUR_TOKEN" \
        response = requests.get(url, timeout=10)
    except requests.Timeout:
        # Fallback or retry logic
+   ```
+
+4. **Logout Not Working**
+   ```python
+   # Make sure you're using the redirect parameter:
+   logout_url = f'{AUTH_SERVER}/logout?' + urlencode({'redirect': your_app_url})
+   return redirect(logout_url)
+   
+   # Check that your domain is in KeyN's allowed domains list
+   ```
+
+5. **Authentication Callback Issues**
+   ```python
+   # Add proper error handling in your callback:
+   @app.route('/auth/callback')
+   def auth_callback():
+       try:
+           # Check authentication logic here
+           return redirect('/')
+       except Exception as e:
+           app.logger.error(f"Auth callback error: {e}")
+           return redirect('/login?error=callback_failed')
    ```
 
 ### **Robust Error Handling Example**
