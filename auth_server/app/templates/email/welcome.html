@@ -1,0 +1,32 @@
+{% extends "email/base_email.html" %}
+
+{% block title %}Welcome to KeyN - Account Verified{% endblock %}
+
+{% block email_title %}Account Verified!{% endblock %}
+{% block email_subtitle %}Welcome to KeyN, {{ username }}! Your account is now active.{% endblock %}
+
+{% block email_content %}
+<p>Congratulations! Your email has been successfully verified and your KeyN account is now fully active.</p>
+
+<div class="info-box">
+  <h4>What's Next?</h4>
+  <ul>
+    <li><strong>Secure your account:</strong> Consider enabling two-factor authentication</li>
+    <li><strong>Explore KeyN:</strong> Connect your favorite applications</li>
+    <li><strong>Stay updated:</strong> Check your email for important security notifications</li>
+    <li><strong>Get help:</strong> Visit our support center if you have questions</li>
+  </ul>
+</div>
+
+<div class="button-container">
+  <a href="{{ dashboard_link }}" class="btn-primary">Access Your Dashboard</a>
+</div>
+
+<p>Your KeyN account provides unified authentication across all connected services. You can now use your KeyN credentials to access any integrated application.</p>
+
+<p><strong>Need help getting started?</strong> Check out our <a href="{{ help_link }}" style="color: var(--primary-color);">getting started guide</a> or contact our support team.</p>
+{% endblock %}
+
+{% block footer_disclaimer %}
+This email confirms that your KeyN account has been successfully verified. Welcome to the KeyN community!
+{% endblock %}

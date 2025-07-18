@@ -242,7 +242,7 @@ def revoke_session(session_id):
     db.session.commit()
     return jsonify({"status": "revoked"})
 
-from .auth_utils import send_verification_email
+from .auth_utils import send_verification_email, verify_email_token
 from . import mail
 
 @auth_bp.route("/register", methods=["GET", "POST"])
@@ -268,16 +268,17 @@ def register():
 
 @auth_bp.route("/verify-email/<token>")
 def verify_email(token):
-    try:
-        data = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
-        user = User.query.get(data["user_id"])
+    user_id = verify_email_token(token, current_app)
+    if user_id:
+        user = User.query.get(user_id)
         if user and not user.is_verified:
             user.is_verified = True
             db.session.commit()
-            return "Email verified. You can now log in."
+            return "Email verified successfully! You can now log in."
         else:
-            return "Already verified or invalid token."
-    except:
+            return "Email already verified or user not found."
+    else:
+        return "Invalid or expired verification token. Please request a new verification email."
         return "Invalid or expired token."
 
 # Admin routes for managing bans

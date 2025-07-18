@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}KeyN{% endblock %}</title>
+  <style>
+    /* Email-safe CSS reset */
+    body, table, td, p, a, li, blockquote {
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+    }
+    
+    table, td {
+      mso-table-lspace: 0pt;
+      mso-table-rspace: 0pt;
+    }
+    
+    img {
+      -ms-interpolation-mode: bicubic;
+      border: 0;
+      height: auto;
+      line-height: 100%;
+      outline: none;
+      text-decoration: none;
+    }
+
+    /* Base styles - using actual values instead of CSS variables */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #1e1e1e;
+      background-color: #f8fafc;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+    }
+    
+    /* Main container */
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(21, 115, 71, 0.1), 0 2px 4px -1px rgba(21, 115, 71, 0.06);
+      border: 1px solid #e2e8f0;
+      overflow: hidden;
+    }
+    
+    /* Email wrapper for padding */
+    .email-wrapper {
+      padding: 20px;
+      background-color: #f8fafc;
+    }
+    
+    /* Header section */
+    .email-header {
+      text-align: center;
+      padding: 40px 40px 20px 40px;
+      background: #ffffff;
+    }
+    
+    /* SVG logo styling */
+    .email-header svg {
+      max-width: 120px;
+      height: auto;
+      display: block;
+      margin: 0 auto 20px auto;
+    }
+    
+    .email-title {
+      color: #1e1e1e;
+      font-size: 28px;
+      font-weight: 600;
+      margin: 0 0 10px 0;
+      line-height: 1.2;
+    }
+    
+    .email-subtitle {
+      color: #64748b;
+      font-size: 16px;
+      margin: 0 0 20px 0;
+      font-weight: 400;
+    }
+    
+    /* Content section */
+    .email-content {
+      padding: 20px 40px;
+      background: #ffffff;
+    }
+    
+    .email-content p {
+      margin: 0 0 20px 0;
+      color: #1e1e1e;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    
+    .email-content ul {
+      margin: 0 0 20px 20px;
+      padding: 0;
+    }
+    
+    .email-content li {
+      color: #64748b;
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+    
+    /* Button styles */
+    .button-container {
+      text-align: center;
+      margin: 30px 0;
+    }
+    
+    .btn-primary {
+      display: inline-block;
+      background-color: #157347;
+      color: #ffffff;
+      padding: 16px 32px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 16px;
+      border: none;
+      cursor: pointer;
+    }
+    
+    /* Code/link display */
+    .backup-link {
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+      word-break: break-all;
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+      font-size: 14px;
+      color: #64748b;
+    }
+    
+    /* Highlight boxes */
+    .info-box {
+      background-color: #f0f9ff;
+      border-left: 4px solid #157347;
+      padding: 16px 20px;
+      margin: 20px 0;
+      border-radius: 0 8px 8px 0;
+    }
+    
+    .info-box h4 {
+      margin: 0 0 8px 0;
+      color: #1e1e1e;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    /* Footer section */
+    .email-footer {
+      text-align: center;
+      padding: 30px 40px 40px 40px;
+      background: #ffffff;
+      border-top: 1px solid #e2e8f0;
+    }
+    
+    /* Footer SVG styling */
+    .email-footer svg {
+      max-width: 40px;
+      height: auto;
+      display: inline-block;
+      opacity: 0.8;
+      margin-bottom: 15px;
+    }
+    
+    .footer-text {
+      color: #64748b;
+      font-size: 14px;
+      margin: 0 0 10px 0;
+      line-height: 1.5;
+    }
+    
+    .footer-signature {
+      color: #1e1e1e;
+      font-weight: 600;
+      font-size: 14px;
+      margin: 0 0 15px 0;
+    }
+    
+    .footer-disclaimer {
+      color: #64748b;
+      font-size: 12px;
+      margin: 15px 0 0 0;
+      line-height: 1.4;
+    }
+    
+    /* Responsive design */
+    @media (max-width: 600px) {
+      .email-wrapper {
+        padding: 10px;
+      }
+      
+      .email-header,
+      .email-content,
+      .email-footer {
+        padding-left: 20px;
+        padding-right: 20px;
+      }
+      
+      .email-title {
+        font-size: 24px;
+      }
+      
+      .btn-primary {
+        padding: 14px 28px;
+        font-size: 15px;
+      }
+    }
+    
+    /* Additional email client compatibility */
+    @media screen and (max-width: 480px) {
+      .email-container {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-wrapper">
+    <div class="email-container">
+      <!-- Header -->
+        <div class="email-header">
+        <img src="cid:logo_image" alt="KeyN Logo" width="120" height="auto" style="margin: 0 auto 20px auto; display: block;" />
+
+        <h1 class="email-title">{% block email_title %}KeyN{% endblock %}</h1>
+        <p class="email-subtitle">{% block email_subtitle %}{% endblock %}</p>
+        </div>
+      
+      <!-- Content -->
+      <div class="email-content">
+        {% block email_content %}
+        <p>This is the default email content.</p>
+        {% endblock %}
+      </div>
+      
+      <!-- Footer -->
+        <div class="email-footer">
+        <img src="cid:favicon_image" alt="KeyN Icon" width="40" height="40" style="margin: 0 auto 15px auto; display: block; opacity: 0.8;" />
+        
+        <p class="footer-text">Thanks for choosing KeyN!</p>
+        <p class="footer-signature"><strong>The KeyN Team</strong></p>
+        <p class="footer-disclaimer">
+            {% block footer_disclaimer %}
+            This email was sent because you have a KeyN account. If you didn't expect this email, please contact support.
+            {% endblock %}
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

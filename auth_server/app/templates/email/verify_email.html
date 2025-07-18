@@ -1,185 +1,33 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Verify Your Email - KeyN</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      line-height: 1.6;
-      color: #1e293b;
-      background-color: #f1f5f9;
-      margin: 0;
-      padding: 20px;
-    }
-    
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      background: #ffffff;
-      padding: 40px;
-      border-radius: 12px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-      border: 1px solid #e2e8f0;
-    }
-    
-    .header {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-    
-    .logo {
-      width: 100px;
-      height: auto;
-      margin-bottom: 20px;
-    }
-    
-    h2 {
-      color: #1e293b;
-      font-size: 24px;
-      font-weight: 600;
-      margin-bottom: 8px;
-      text-align: center;
-    }
-    
-    .welcome-text {
-      color: #64748b;
-      text-align: center;
-      margin-bottom: 30px;
-      font-size: 16px;
-    }
-    
-    .content {
-      margin-bottom: 30px;
-    }
-    
-    .content p {
-      margin-bottom: 20px;
-      color: #475569;
-      font-size: 16px;
-    }
-    
-    .verify-button {
-      display: inline-block;
-      background-color: #2563eb;
-      color: white;
-      padding: 14px 28px;
-      text-decoration: none;
-      border-radius: 8px;
-      font-weight: 500;
-      font-size: 16px;
-      margin: 20px 0;
-      transition: background-color 0.2s ease;
-    }
-    
-    .verify-button:hover {
-      background-color: #1d4ed8;
-    }
-    
-    .button-container {
-      text-align: center;
-      margin: 30px 0;
-    }
-    
-    .backup-link {
-      background-color: #f8fafc;
-      border: 1px solid #e2e8f0;
-      padding: 15px;
-      border-radius: 8px;
-      margin: 20px 0;
-      word-break: break-all;
-      font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
-      font-size: 14px;
-      color: #475569;
-    }
-    
-    .footer {
-      text-align: center;
-      margin-top: 40px;
-      padding-top: 20px;
-      border-top: 1px solid #e2e8f0;
-      color: #64748b;
-      font-size: 14px;
-    }
-    
-    .footer-logo {
-      width: 30px;
-      height: auto;
-      margin-bottom: 10px;
-    }
-    
-    @media (max-width: 600px) {
-      .container {
-        padding: 30px 20px;
-        margin: 10px;
-      }
-      
-      .logo {
-        width: 80px;
-      }
-      
-      h2 {
-        font-size: 20px;
-      }
-      
-      .verify-button {
-        padding: 12px 24px;
-        font-size: 14px;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iMTIiIGZpbGw9IiMyNTYzZWIiLz4KPHN2ZyB4PSIyMCIgeT0iMjAiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj4KICA8Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIzIi8+CiAgPHBhdGggZD0iTTEyIDFWMyIvPgogIDxwYXRoIGQ9Ik0xMiAyMVYyMyIvPgogIDxwYXRoIGQ9Ik00LjIyIDQuMjJMNS42NCA1LjY0Ii8+CiAgPHBhdGggZD0iTTE4LjM2IDE4LjM2TDE5Ljc4IDE5Ljc4Ii8+CiAgPHBhdGggZD0iTTEgMTJIMyIvPgogIDxwYXRoIGQ9Ik0yMSAxMkgyMyIvPgogIDxwYXRoIGQ9Ik00LjIyIDE5Ljc4TDUuNjQgMTguMzYiLz4KICA8cGF0aCBkPSJNMTguMzYgNS42NEwxOS43OCA0LjIyIi8+Cjwvc3ZnPgo8L3N2Zz4K" alt="KeyN Logo" class="logo">
-      <h2>Welcome to KeyN!</h2>
-      <p class="welcome-text">Hi {{ username }}, let's verify your email address.</p>
-    </div>
-    
-    <div class="content">
-      <p>Thank you for creating your KeyN account! To complete the setup and secure your account, please verify your email address by clicking the button below:</p>
-      
-      <div class="button-container">
-        <a href="{{ link }}" class="verify-button">Verify Email Address</a>
-      </div>
-      
-      <p>If the button above doesn't work, you can copy and paste this link into your browser:</p>
-      <div class="backup-link">{{ link }}</div>
-      
-      <p><strong>Why verify your email?</strong></p>
-      <ul style="color: #64748b; margin-left: 20px;">
-        <li>Secure your account with two-factor authentication</li>
-        <li>Recover your account if you forget your password</li>
-        <li>Receive important security notifications</li>
-        <li>Access all KeyN-connected applications</li>
-      </ul>
-    </div>
-    
-    <div class="footer">
-      <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCAzMCAzMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMwIiBoZWlnaHQ9IjMwIiByeD0iNCIgZmlsbD0iIzI1NjNlYiIvPgo8c3ZnIHg9IjYiIHk9IjYiIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CiAgPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMyIvPgogIDxwYXRoIGQ9Ik0xMiAxVjMiLz4KICA8cGF0aCBkPSJNMTIgMjFWMjMiLz4KICA8cGF0aCBkPSJNNC4yMiA0LjIyTDUuNjQgNS42NCIvPgogIDxwYXRoIGQ9Ik0xOC4zNiAxOC4zNkwxOS43OCAxOS43OCIvPgogIDxwYXRoIGQ9Ik0xIDEySDMiLz4KICA8cGF0aCBkPSJNMjEgMTJIMjMiLz4KICA8cGF0aCBkPSJNNC4yMiAxOS43OEw1LjY0IDE4LjM2Ii8+CiAgPHBhdGggZD0iTTE4LjM2IDUuNjRMMTkuNzggNC4yMiIvPgo8L3N2Zz4KPC9zdmc+Cg==" alt="KeyN" class="footer-logo">
-      <p>Thanks for choosing KeyN!<br>
-      <strong>The KeyN Team</strong></p>
-      <p style="font-size: 12px; margin-top: 15px;">This email was sent because you created a KeyN account. If you didn't create this account, please ignore this email.</p>
-    </div>
-  </div>
-</body>
-</html>ml>
-<head>
-  <meta charset="utf-8">
-  <title>Verify Your Email</title>
-</head>
-<body style="font-family: sans-serif; line-height: 1.5;">
-  <h2>Welcome to KeyN, {{ username }}!</h2>
-  <p>Please verify your email address by clicking the button below:</p>
-  <p>
-    <a href="{{ link }}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-      Verify Email
-    </a>
-  </p>
-  <p>If the button doesn’t work, copy and paste this link into your browser:</p>
-  <p style="word-break: break-all;">{{ link }}</p>
-  <p>Thanks,<br>The KeyN Team</p>
-</body>
-</html>
+{% extends "email/base_email.html" %}
+
+{% block title %}Verify Your Email - KeyN{% endblock %}
+
+{% block email_title %}Welcome to KeyN!{% endblock %}
+{% block email_subtitle %}Hi {{ username }}, let's verify your email address.{% endblock %}
+
+{% block email_content %}
+<p style="margin: 0 0 20px 0; color: #1e1e1e; font-size: 16px; line-height: 1.6;">Thank you for creating your KeyN account! To complete the setup and secure your account, please verify your email address by clicking the button below:</p>
+
+<div style="text-align: center; margin: 30px 0;">
+  <a href="{{ link }}" style="display: inline-block; background-color: #157347; color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; border: none;">Verify Email Address</a>
+</div>
+
+<p style="margin: 0 0 20px 0; color: #1e1e1e; font-size: 16px; line-height: 1.6;">If the button above doesn't work, you can copy and paste this link into your browser:</p>
+<div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin: 20px 0; word-break: break-all; font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace; font-size: 14px; color: #64748b;">{{ link }}</div>
+
+<div style="background-color: #f0f9ff; border-left: 4px solid #157347; padding: 16px 20px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+  <h4 style="margin: 0 0 8px 0; color: #1e1e1e; font-size: 16px; font-weight: 600;">Why verify your email?</h4>
+  <ul style="margin: 0 0 0 20px; padding: 0;">
+    <li style="color: #64748b; margin-bottom: 8px; font-size: 15px;">Secure your account with two-factor authentication</li>
+    <li style="color: #64748b; margin-bottom: 8px; font-size: 15px;">Recover your account if you forget your password</li>
+    <li style="color: #64748b; margin-bottom: 8px; font-size: 15px;">Receive important security notifications</li>
+    <li style="color: #64748b; margin-bottom: 8px; font-size: 15px;">Access all KeyN-connected applications</li>
+  </ul>
+</div>
+
+<p style="margin: 0 0 20px 0; color: #1e1e1e; font-size: 16px; line-height: 1.6;">This verification link will expire in <strong>1 hour</strong> for security purposes.</p>
+{% endblock %}
+
+{% block footer_disclaimer %}
+This email was sent because you created a KeyN account. If you didn't create this account, please ignore this email and no account will be created.
+{% endblock %}
