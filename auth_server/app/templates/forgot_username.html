@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Forgot Username - KeyN{% endblock %}
+{% block content %}
+<div class="logo-container">
+  <img src="{{ url_for('static', filename='logos/light-mode-keyn-logo.svg') }}" alt="KeyN Logo" class="logo logo-light">
+  <img src="{{ url_for('static', filename='logos/dark-mode-keyn-logo.svg') }}" alt="KeyN Logo" class="logo logo-dark">
+</div>
+<h2>Forgot Username</h2>
+<p>Enter your email address to receive your username.</p>
+<form method="POST">
+  {{ form.hidden_tag() }}
+  <div class="form-group">
+    {{ form.email.label(class="form-label") }}
+    {{ form.email(size=32, class="form-input", placeholder="Enter your email") }}
+    {% for error in form.email.errors %}
+      <span class="error-message">{{ error }}</span>
+    {% endfor %}
+  </div>
+  {{ form.submit(class="submit-btn") }}
+</form>
+{% endblock %}

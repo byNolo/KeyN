@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Verify Your Email - KeyN{% endblock %}
+{% block content %}
+<div class="status-card">
+  <div class="status-icon success">
+    <div class="logo-container">
+    <img src="{{ url_for('static', filename='logos/light-mode-keyn-logo.svg') }}" 
+        alt="KeyN Logo" class="logo logo-light">
+    <img src="{{ url_for('static', filename='logos/dark-mode-keyn-logo.svg') }}" 
+        alt="KeyN Logo" class="logo logo-dark">
+    </div>
+  </div>
+  <h2>Check Your Email</h2>
+  <p class="subtitle">We've sent a verification link to your email address.<br>Click the link in your inbox to activate your account.</p>
+  <div class="info-box">
+    <ul>
+      <li>If you don't see the email, check your spam or junk folder.</li>
+      <li>The link will expire in <strong>1 hour</strong>.</li>
+      <li>Once verified, you can log in and start using KeyN.</li>
+    </ul>
+  </div>
+  <div class="link-container">
+    <a href="{{ url_for('auth.login', redirect=redirect_url) if redirect_url else url_for('auth.login') }}" class="btn-primary">Back to Login</a>
+  </div>
+</div>
+{% endblock %}

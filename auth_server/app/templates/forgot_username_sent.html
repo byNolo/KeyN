@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Username Sent - KeyN{% endblock %}
+{% block content %}
+<div class="status-card">
+  <div class="status-icon success">
+    <div class="logo-container">
+      <img src="{{ url_for('static', filename='logos/light-mode-keyn-logo.svg') }}" alt="KeyN Logo" class="logo logo-light">
+      <img src="{{ url_for('static', filename='logos/dark-mode-keyn-logo.svg') }}" alt="KeyN Logo" class="logo logo-dark">
+    </div>
+  </div>
+  <h2>Username Sent</h2>
+  <p class="subtitle">If the email you entered is registered, your username has been sent to your inbox.</p>
+  <div class="info-box">
+    <ul>
+      <li>If you don't see the email, check your spam or junk folder.</li>
+      <li>If you did not request this, you can ignore the email.</li>
+    </ul>
+  </div>
+  <div class="link-container">
+    <a href="{{ url_for('auth.login') }}" class="btn-primary">Back to Login</a>
+  </div>
+</div>
+{% endblock %}

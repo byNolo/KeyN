@@ -35,10 +35,8 @@
   <!-- Additional CSS -->
   {% block additional_css %}{% endblock %}
   
-  <!-- Favicon with theme support -->
-  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logos/favicon-light.svg') }}?v={{ cache_version }}" media="(prefers-color-scheme: light)">
-  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logos/favicon-dark.svg') }}?v={{ cache_version }}" media="(prefers-color-scheme: dark)">
-  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logos/favicon-light.svg') }}">
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='logos/favicon.png') }}?v={{ cache_version }}" sizes="32x32">
   
   <!-- Theme color for mobile browsers -->
   <meta name="theme-color" content="#2563eb">

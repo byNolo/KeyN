@@ -74,20 +74,30 @@ def protected_page():
 
 ### 2. **Add Logout Support**
 
+
 ```python
 @app.route('/logout')
 def logout():
     """Logout from current app and KeyN"""
-    
     # Clear local session
     session.clear()
-    
     # Redirect to KeyN logout with redirect parameter to return to this app
     from urllib.parse import urlencode
     redirect_url = request.url_root  # Your app's home page
     logout_url = 'https://auth-keyn.nolanbc.ca/logout?' + urlencode({'redirect': redirect_url})
     return redirect(logout_url)
 ```
+
+> **How KeyN Logout Works:**
+>
+> When you redirect users to `https://auth-keyn.nolanbc.ca/logout`, KeyN will:
+> - Revoke all refresh tokens for the user (logging them out of all KeyN-connected apps and sessions)
+> - Log out the user from KeyN
+> - Clear the KeyN session
+> - **Explicitly delete the SSO cookies (`keyn_session` and `remember_token`) for the `.nolanbc.ca` domain**
+> - Redirect the user back to your app (using the `redirect` parameter)
+>
+> This ensures users are fully logged out of KeyN and any app using KeyN authentication. You do not need to perform any additional logout steps for KeyN SSO. If the user tries to log in again, they must re-authenticate.
 
 ### 3. **Add Authentication Callback (Optional)**
 

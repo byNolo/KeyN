@@ -2,7 +2,10 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from .models import User, RefreshToken
-from .forms import LoginForm, RegisterForm
+from .forms import LoginForm, RegisterForm, ForgotPasswordForm, ForgotUsernameForm
+from flask_wtf import FlaskForm
+from wtforms import PasswordField, SubmitField
+from wtforms.validators import DataRequired, EqualTo
 from . import db, login_manager
 from .security_utils import (
     get_real_ip, generate_device_fingerprint, is_ip_banned, is_device_banned,
@@ -93,29 +96,44 @@ def logout():
     
     # Clear session regardless of login status
     session.clear()
-    
-    # Handle both GET and POST requests
+
+    # Prepare response to clear cookies
+    from flask import make_response
     if request.method == "GET":
         # Check for redirect parameter (like from demo client)
         redirect_url = request.args.get("redirect")
         if redirect_url:
-            # Validate that redirect URL is from allowed domains for security
-            allowed_domains = [
-                'https://demo-keyn.nolanbc.ca',
-                'https://ui-keyn.nolanbc.ca',
-                'http://localhost:6002',  # For development
-                'http://localhost:6001'   # For development
-            ]
-            
-            # Check if redirect URL starts with any allowed domain
+            from config import Config
+            allowed_domains = Config.ALLOWED_REDIRECT_DOMAINS
+
             if any(redirect_url.startswith(domain) for domain in allowed_domains):
-                return redirect(redirect_url)
-        
+                response = make_response(redirect(redirect_url))
+                # Delete cookies for .nolanbc.ca and current domain
+                response.delete_cookie('keyn_session', domain='.nolanbc.ca', path='/')
+                response.delete_cookie('remember_token', domain='.nolanbc.ca', path='/')
+                response.delete_cookie('keyn_session', domain=request.host, path='/')
+                response.delete_cookie('remember_token', domain=request.host, path='/')
+                response.delete_cookie('keyn_session', path='/')
+                response.delete_cookie('remember_token', path='/')
+                return response
         # Default: redirect to login page
-        return redirect(url_for("auth.login"))
+        response = make_response(redirect(url_for("auth.login")))
+        response.delete_cookie('keyn_session', domain='.nolanbc.ca', path='/')
+        response.delete_cookie('remember_token', domain='.nolanbc.ca', path='/')
+        response.delete_cookie('keyn_session', domain=request.host, path='/')
+        response.delete_cookie('remember_token', domain=request.host, path='/')
+        response.delete_cookie('keyn_session', path='/')
+        response.delete_cookie('remember_token', path='/')
+        return response
     else:
-        # For POST requests (API calls), return JSON response
-        return jsonify({"status": "logged out"})
+        response = make_response(jsonify({"status": "logged out"}))
+        response.delete_cookie('keyn_session', domain='.nolanbc.ca', path='/')
+        response.delete_cookie('remember_token', domain='.nolanbc.ca', path='/')
+        response.delete_cookie('keyn_session', domain=request.host, path='/')
+        response.delete_cookie('remember_token', domain=request.host, path='/')
+        response.delete_cookie('keyn_session', path='/')
+        response.delete_cookie('remember_token', path='/')
+        return response
 
 @auth_bp.route("/api/validate-token", methods=["GET"])
 def validate_token():
@@ -243,11 +261,111 @@ def revoke_session(session_id):
     return jsonify({"status": "revoked"})
 
 from .auth_utils import send_verification_email, verify_email_token
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
+from flask_mail import Message
+def get_serializer():
+    return URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
+
+# Forgot Password
+@auth_bp.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    form = ForgotPasswordForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user:
+            serializer = get_serializer()
+            token = serializer.dumps(user.email, salt="password-reset-salt")
+            reset_url = url_for("auth.reset_password", token=token, _external=True)
+            msg = Message("KeyN Password Reset", recipients=[user.email])
+            msg.html = render_template("email/password_reset.html", username=user.username, link=reset_url)
+            # Attach logo.png as inline image
+            try:
+                with current_app.open_resource("static/logos/logo.png") as f:
+                    logo_data = f.read()
+                    msg.attach(
+                        "logo.png", "image/png", logo_data,
+                        disposition='inline',
+                        headers={"Content-ID": "<logo_image>"}
+                    )
+            except Exception as e:
+                print(f"[EMAIL] Warning: Could not attach logo.png: {e}")
+            # Attach favicon.png as inline image
+            try:
+                with current_app.open_resource("static/logos/favicon.png") as f:
+                    favicon_data = f.read()
+                    msg.attach(
+                        "favicon.png", "image/png", favicon_data,
+                        disposition='inline',
+                        headers={"Content-ID": "<favicon_image>"}
+                    )
+            except Exception as e:
+                print(f"[EMAIL] Warning: Could not attach favicon.png: {e}")
+            mail.send(msg)
+        return render_template("forgot_password_sent.html")
+    return render_template("forgot_password.html", form=form)
+
+# Reset Password
+@auth_bp.route("/reset-password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    serializer = get_serializer()
+    try:
+        email = serializer.loads(token, salt="password-reset-salt", max_age=3600)
+    except (SignatureExpired, BadSignature):
+        return "Invalid or expired token."
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return "User not found."
+    class ResetPasswordForm(FlaskForm):
+        password = PasswordField("New Password", validators=[DataRequired()])
+        confirm = PasswordField("Confirm Password", validators=[DataRequired(), EqualTo("password")])
+        submit = SubmitField("Reset Password")
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        user.password_hash = generate_password_hash(form.password.data)
+        db.session.commit()
+        return "Password reset successful. You may now log in."
+    return render_template("reset_password.html", form=form)
+
+# Forgot Username
+@auth_bp.route("/forgot-username", methods=["GET", "POST"])
+def forgot_username():
+    form = ForgotUsernameForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user:
+            msg = Message("KeyN Username Recovery", recipients=[user.email])
+            msg.html = render_template("email/username_reminder.html", username=user.username)
+            # Attach logo.png as inline image
+            try:
+                with current_app.open_resource("static/logos/logo.png") as f:
+                    logo_data = f.read()
+                    msg.attach(
+                        "logo.png", "image/png", logo_data,
+                        disposition='inline',
+                        headers={"Content-ID": "<logo_image>"}
+                    )
+            except Exception as e:
+                print(f"[EMAIL] Warning: Could not attach logo.png: {e}")
+            # Attach favicon.png as inline image
+            try:
+                with current_app.open_resource("static/logos/favicon.png") as f:
+                    favicon_data = f.read()
+                    msg.attach(
+                        "favicon.png", "image/png", favicon_data,
+                        disposition='inline',
+                        headers={"Content-ID": "<favicon_image>"}
+                    )
+            except Exception as e:
+                print(f"[EMAIL] Warning: Could not attach favicon.png: {e}")
+            mail.send(msg)
+        return render_template("forgot_username_sent.html")
+    return render_template("forgot_username.html", form=form)
 from . import mail
 
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
     form = RegisterForm()
+    redirect_url = request.args.get("redirect")
     if form.validate_on_submit():
         if User.query.filter_by(username=form.username.data).first():
             form.username.errors.append("Username already exists")
@@ -263,8 +381,8 @@ def register():
             db.session.add(new_user)
             db.session.commit()
             send_verification_email(new_user, current_app, mail)
-            return "Check your email to verify your account."
-    return render_template("register.html", form=form)
+            return render_template("email_verification_sent.html", redirect_url=redirect_url)
+    return render_template("register.html", form=form, redirect_url=redirect_url)
 
 @auth_bp.route("/verify-email/<token>")
 def verify_email(token):

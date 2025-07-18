@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
+    # Allowed redirect domains for logout and other flows
+    ALLOWED_REDIRECT_DOMAINS = os.environ.get("FLASK_ALLOWED_REDIRECT_DOMAINS", "http://localhost:6002,http://localhost:6001").split(",")
     SECRET_KEY = os.environ.get("FLASK_SECRET_KEY", "fallback-secret")
     # PERMANENT_SESSION_LIFETIME = int(os.environ.get("FLASK_PERMANENT_SESSION_LIFETIME", 7 * 24 * 60 * 60))  # Default to 7 days in seconds
 

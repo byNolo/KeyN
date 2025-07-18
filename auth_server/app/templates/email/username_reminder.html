@@ -1,0 +1,16 @@
+{% extends "email/base_email.html" %}
+
+{% block title %}Your KeyN Username{% endblock %}
+
+{% block email_title %}Username Reminder{% endblock %}
+{% block email_subtitle %}Hi, here is your KeyN username.{% endblock %}
+
+{% block email_content %}
+<p>You requested a reminder of your KeyN username. Your username is:</p>
+<div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin: 20px 0; word-break: break-all; font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace; font-size: 16px; color: #157347; font-weight: bold;">{{ username }}</div>
+<p>If you did not request this reminder, you can safely ignore this email.</p>
+{% endblock %}
+
+{% block footer_disclaimer %}
+This email was sent because someone requested a username reminder for your KeyN account. If you didn't make this request, please ignore this email.
+{% endblock %}
