@@ -392,7 +392,7 @@ def verify_email(token):
         if user and not user.is_verified:
             user.is_verified = True
             db.session.commit()
-            return "Email verified successfully! You can now log in."
+            return render_template("email_verified.html")
         else:
             return "Email already verified or user not found."
     else:

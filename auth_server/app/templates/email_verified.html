@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Email Verified - KeyN{% endblock %}
+{% block content %}
+<div class="status-card verified">
+  <div class="status-icon success">
+    <div class="logo-container">
+      <img src="{{ url_for('static', filename='logos/light-mode-keyn-logo.svg') }}" alt="KeyN Logo" class="logo logo-light">
+      <img src="{{ url_for('static', filename='logos/dark-mode-keyn-logo.svg') }}" alt="KeyN Logo" class="logo logo-dark">
+    </div>
+  </div>
+  <h2 class="verified-title">🎉 Your Email is Verified!</h2>
+  <p class="subtitle">Thank you for verifying your email address.<br>You can now log in and start using KeyN.</p>
+  <div class="info-box verified-info">
+    <ul>
+      <li><strong>Welcome to KeyN!</strong> Your account is now active.</li>
+      <li>Enjoy secure access to all connected apps.</li>
+      <li>If you have any issues, contact support.</li>
+    </ul>
+  </div>
+  <div class="link-container">
+    <a href="{{ url_for('auth.login') }}" class="btn-primary">Go to Login</a>
+  </div>
+</div>
+<style>
+.status-card.verified {
+  background: linear-gradient(135deg, #e0f7fa 0%, #e3ffe6 100%);
+  border: 2px solid #34d399;
+  box-shadow: 0 4px 24px rgba(52, 211, 153, 0.12);
+  padding: 32px 24px;
+  border-radius: 16px;
+  text-align: center;
+}
+.verified-title {
+  color: #059669;
+  font-size: 2rem;
+  margin-top: 16px;
+}
+.verified-info {
+  background: #f0fff4;
+  border-left: 4px solid #34d399;
+  margin: 24px 0;
+  padding: 16px 24px;
+  border-radius: 8px;
+  color: #065f46;
+}
+.btn-primary {
+  background: #059669;
+  color: #fff;
+  padding: 12px 32px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.08);
+  transition: background 0.2s;
+}
+.btn-primary:hover {
+  background: #047857;
+}
+</style>
+{% endblock %}
