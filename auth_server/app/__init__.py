@@ -44,6 +44,12 @@ def create_app():
     from .routes import auth_bp
     app.register_blueprint(auth_bp)
     
+    # Initialize database and default scopes
+    with app.app_context():
+        db.create_all()
+        from .oauth_utils import ScopeManager
+        ScopeManager.initialize_default_scopes()
+    
     # Add cache busting version to template context
     @app.context_processor
     def inject_cache_version():

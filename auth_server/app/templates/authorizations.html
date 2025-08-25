@@ -1,0 +1,902 @@
+{% extends "base.html" %}
+
+{% block title %}Authorized Applications - KeyN{% endblock %}
+
+{% block containerType %}
+<div class="authorizations-container">
+{% endblock %}
+
+{% block content %}
+<div class="authorizations-wrapper">
+    <!-- Logo Section -->
+    <div class="auth-logo-section">
+        <img src="{{ url_for('static', filename='logos/light mode KeyN logo Transparent BG.svg') }}" 
+             alt="KeyN Logo" class="logo logo-light">
+        <img src="{{ url_for('static', filename='logos/dark mode KeyN logo Transparent BG.svg') }}" 
+             alt="KeyN Logo" class="logo logo-dark">
+    </div>
+
+    <div class="authorizations-card">
+        <!-- Header -->
+        <div class="auth-header">
+            <div class="auth-shield-icon">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <h1>Authorized Applications</h1>
+            <p class="auth-subtitle">Manage applications connected to your KeyN account</p>
+        </div>
+
+        <!-- Description -->
+        <div class="auth-description">
+            <div class="description-content">
+                <i class="fas fa-info-circle"></i>
+                <p>These applications have been granted access to your KeyN account data. You can revoke access for any application at any time.</p>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="auth-main-content">
+            <div id="authorizations-container">
+                <div class="loading-state">
+                    <div class="loading-spinner"></div>
+                    <p>Loading authorized applications...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="auth-footer">
+            <p>Powered by <strong>KeyN</strong> Authentication</p>
+        </div>
+    </div>
+</div>
+
+<!-- Revoke Authorization Modal -->
+<div class="revoke-modal-overlay" id="revokeModal">
+    <div class="revoke-modal">
+        <div class="modal-header">
+            <div class="modal-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3>Revoke Authorization</h3>
+            <button type="button" class="modal-close" onclick="hideRevokeModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to revoke access for <strong id="revoke-client-name"></strong>?</p>
+            <p class="modal-warning">
+                This application will no longer be able to access your data. 
+                If you use this application again, you'll need to re-authorize it.
+            </p>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="hideRevokeModal()">Cancel</button>
+            <button type="button" class="btn-revoke" id="confirm-revoke">
+                <i class="fas fa-trash"></i>
+                <span>Revoke Access</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Authorizations Page Styles */
+.authorizations-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 20px;
+  background: var(--bg-color);
+}
+
+.authorizations-wrapper {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.auth-logo-section {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.auth-logo-section .logo {
+  width: 120px;
+  height: auto;
+  transition: transform 0.3s ease;
+}
+
+.auth-logo-section .logo:hover {
+  transform: scale(1.05);
+}
+
+.authorizations-card {
+  background: var(--card-bg);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+[data-theme="dark"] .authorizations-card {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Header Section */
+.auth-header {
+  padding: 32px 32px 24px;
+  text-align: center;
+  background: linear-gradient(135deg, var(--card-bg) 0%, var(--bg-color) 100%);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.auth-shield-icon {
+  width: 60px;
+  height: 60px;
+  background: var(--primary-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  color: white;
+  font-size: 24px;
+  box-shadow: 0 4px 12px rgba(21, 115, 71, 0.3);
+}
+
+[data-theme="dark"] .auth-shield-icon {
+  box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
+}
+
+.auth-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0 0 8px;
+}
+
+.auth-subtitle {
+  color: var(--secondary-color);
+  font-size: 16px;
+  margin: 0;
+  font-weight: 400;
+}
+
+/* Description Section */
+.auth-description {
+  padding: 20px 32px;
+  background: rgba(59, 130, 246, 0.08);
+  border-bottom: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .auth-description {
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.description-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: var(--text-color);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.description-content i {
+  color: #3b82f6;
+  font-size: 18px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.description-content p {
+  margin: 0;
+}
+
+/* Main Content */
+.auth-main-content {
+  padding: 32px;
+  min-height: 300px;
+}
+
+/* Loading State */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: var(--secondary-color);
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-color);
+  border-top: 3px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-state p {
+  margin: 0;
+  font-size: 16px;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--secondary-color);
+}
+
+.empty-state-icon {
+  font-size: 64px;
+  margin-bottom: 24px;
+  color: var(--border-color);
+}
+
+.empty-state h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0 0 12px;
+}
+
+.empty-state p {
+  font-size: 16px;
+  margin: 0;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Authorization Cards Grid */
+.authorizations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.auth-app-card {
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 24px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.auth-app-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .auth-app-card:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* App Card Header */
+.app-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.app-info h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0 0 6px;
+}
+
+.app-description {
+  font-size: 14px;
+  color: var(--secondary-color);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.revoke-btn {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.revoke-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  transform: translateY(-1px);
+}
+
+/* App Metadata */
+.app-metadata {
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: var(--secondary-color);
+}
+
+.metadata-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.metadata-item:last-child {
+  margin-bottom: 0;
+}
+
+.metadata-item i {
+  width: 14px;
+  color: var(--primary-color);
+}
+
+/* Scopes Section */
+.app-scopes h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-scopes h4 i {
+  color: var(--primary-color);
+}
+
+.scopes-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.scope-badge {
+  background: rgba(21, 115, 71, 0.1);
+  color: var(--primary-color);
+  border: 1px solid rgba(21, 115, 71, 0.2);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: help;
+}
+
+[data-theme="dark"] .scope-badge {
+  background: rgba(52, 211, 153, 0.1);
+  border-color: rgba(52, 211, 153, 0.2);
+}
+
+/* Modal Styles */
+.revoke-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.revoke-modal-overlay.show {
+  display: flex;
+}
+
+.revoke-modal {
+  background: var(--card-bg);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-width: 480px;
+  overflow: hidden;
+  animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-header {
+  padding: 24px 24px 16px;
+  text-align: center;
+  position: relative;
+}
+
+.modal-icon {
+  width: 50px;
+  height: 50px;
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--warning-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  font-size: 20px;
+}
+
+.modal-header h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0;
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: var(--secondary-color);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+  background: var(--bg-color);
+  color: var(--text-color);
+}
+
+.modal-body {
+  padding: 0 24px 24px;
+  text-align: center;
+}
+
+.modal-body p {
+  margin: 0 0 16px;
+  font-size: 16px;
+  color: var(--text-color);
+}
+
+.modal-warning {
+  font-size: 14px !important;
+  color: var(--secondary-color) !important;
+  margin: 0 !important;
+}
+
+.modal-actions {
+  padding: 20px 24px 24px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.btn-cancel,
+.btn-revoke {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-cancel {
+  background: var(--bg-color);
+  color: var(--secondary-color);
+  border: 2px solid var(--border-color);
+}
+
+.btn-cancel:hover {
+  background: var(--card-bg);
+  color: var(--text-color);
+  border-color: var(--secondary-color);
+}
+
+.btn-revoke {
+  background: #ef4444;
+  color: white;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.btn-revoke:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+/* Success Alert */
+.success-alert {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--success-color);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  padding: 16px 20px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.success-alert i {
+  color: var(--success-color);
+}
+
+.alert-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--success-color);
+  cursor: pointer;
+  padding: 4px;
+}
+
+/* Footer */
+.auth-footer {
+  padding: 20px 32px;
+  text-align: center;
+  background: var(--bg-color);
+  border-top: 1px solid var(--border-color);
+}
+
+.auth-footer p {
+  color: var(--secondary-color);
+  font-size: 14px;
+  margin: 0;
+}
+
+.auth-footer strong {
+  color: var(--primary-color);
+}
+
+/* Mobile Responsive Design */
+@media (max-width: 768px) {
+  .authorizations-container {
+    padding: 16px;
+  }
+
+  .auth-logo-section {
+    margin-bottom: 24px;
+  }
+
+  .auth-logo-section .logo {
+    width: 100px;
+  }
+
+  .authorizations-card {
+    border-radius: 12px;
+  }
+
+  .auth-header {
+    padding: 24px 24px 20px;
+  }
+
+  .auth-shield-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+
+  .auth-header h1 {
+    font-size: 24px;
+  }
+
+  .auth-subtitle {
+    font-size: 14px;
+  }
+
+  .auth-description {
+    padding: 16px 24px;
+  }
+
+  .description-content {
+    font-size: 14px;
+    gap: 10px;
+  }
+
+  .auth-main-content {
+    padding: 24px;
+  }
+
+  .authorizations-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .auth-app-card {
+    padding: 20px;
+  }
+
+  .app-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .revoke-btn {
+    align-self: flex-end;
+  }
+
+  .revoke-modal {
+    width: 95%;
+    margin: 20px;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+  }
+
+  .btn-cancel,
+  .btn-revoke {
+    justify-content: center;
+  }
+
+  .auth-footer {
+    padding: 16px 24px;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 480px) {
+  .auth-main-content,
+  .auth-description {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .auth-footer {
+    padding: 16px 20px;
+  }
+
+  .auth-app-card {
+    padding: 16px;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .authorizations-card,
+  .auth-app-card {
+    border-width: 2px;
+  }
+
+  .btn-cancel {
+    border-width: 3px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .authorizations-card,
+  .auth-app-card,
+  .revoke-btn,
+  .btn-cancel,
+  .btn-revoke {
+    transition: none;
+  }
+
+  .auth-logo-section .logo:hover,
+  .auth-app-card:hover {
+    transform: none;
+  }
+
+  .loading-spinner {
+    animation: none;
+  }
+
+  .revoke-modal {
+    animation: none;
+  }
+}
+</style>
+
+<script>
+let currentClientId = null;
+
+async function loadAuthorizations() {
+    try {
+        const response = await fetch('/api/user/authorizations', {
+            credentials: 'same-origin'
+        });
+        const authorizations = await response.json();
+        
+        const container = document.getElementById('authorizations-container');
+        
+        if (authorizations.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h2>No Authorized Applications</h2>
+                    <p>You haven't authorized any applications to access your KeyN account yet. When you do, they'll appear here for you to manage.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '<div class="authorizations-grid">';
+        
+        authorizations.forEach(auth => {
+            const lastUsed = auth.last_used ? 
+                new Date(auth.last_used).toLocaleDateString() : 
+                'Never';
+            const grantedAt = new Date(auth.granted_at).toLocaleDateString();
+            
+            html += `
+                <div class="auth-app-card">
+                    <div class="app-card-header">
+                        <div class="app-info">
+                            <h3>${auth.client_name}</h3>
+                            <p class="app-description">${auth.client_description || 'No description provided'}</p>
+                        </div>
+                        <button class="revoke-btn" 
+                                onclick="showRevokeModal('${auth.client_id}', '${auth.client_name}')"
+                                title="Revoke access">
+                            <i class="fas fa-trash"></i>
+                            <span>Revoke</span>
+                        </button>
+                    </div>
+                    
+                    <div class="app-metadata">
+                        <div class="metadata-item">
+                            <i class="fas fa-calendar"></i>
+                            <span>Granted: ${grantedAt}</span>
+                        </div>
+                        <div class="metadata-item">
+                            <i class="fas fa-clock"></i>
+                            <span>Last used: ${lastUsed}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="app-scopes">
+                        <h4>
+                            <i class="fas fa-key"></i>
+                            Authorized Data:
+                        </h4>
+                        <div class="scopes-list">
+                            ${auth.scopes.map(scope => 
+                                `<span class="scope-badge" title="${scope.description}">
+                                    ${scope.display_name}
+                                </span>`
+                            ).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        container.innerHTML = html;
+        
+    } catch (error) {
+        console.error('Error loading authorizations:', error);
+        document.getElementById('authorizations-container').innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon" style="color: var(--error-color);">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h2 style="color: var(--error-color);">Failed to Load Applications</h2>
+                <p>There was an error loading your authorized applications. Please refresh the page to try again.</p>
+            </div>
+        `;
+    }
+}
+
+function showRevokeModal(clientId, clientName) {
+    currentClientId = clientId;
+    document.getElementById('revoke-client-name').textContent = clientName;
+    document.getElementById('revokeModal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+function hideRevokeModal() {
+    document.getElementById('revokeModal').classList.remove('show');
+    document.body.style.overflow = '';
+    currentClientId = null;
+}
+
+async function revokeAuthorization() {
+    if (!currentClientId) return;
+    
+    try {
+        const response = await fetch(`/api/user/authorizations/${currentClientId}`, {
+            method: 'DELETE',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            hideRevokeModal();
+            
+            // Show success message
+            const container = document.getElementById('authorizations-container');
+            container.insertAdjacentHTML('beforebegin', `
+                <div class="success-alert">
+                    <i class="fas fa-check"></i>
+                    <span>Authorization revoked successfully.</span>
+                    <button class="alert-close" onclick="this.parentElement.remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `);
+            
+            // Reload authorizations
+            await loadAuthorizations();
+        } else {
+            throw new Error('Failed to revoke authorization');
+        }
+    } catch (error) {
+        console.error('Error revoking authorization:', error);
+        
+        // Show error message in modal
+        const modalBody = document.querySelector('.modal-body');
+        modalBody.innerHTML = `
+            <div style="color: var(--error-color); margin-bottom: 16px;">
+                <i class="fas fa-exclamation-triangle"></i>
+                Failed to revoke authorization. Please try again.
+            </div>
+            <p>Are you sure you want to revoke access for <strong id="revoke-client-name">${document.getElementById('revoke-client-name').textContent}</strong>?</p>
+            <p class="modal-warning">
+                This application will no longer be able to access your data. 
+                If you use this application again, you'll need to re-authorize it.
+            </p>
+        `;
+    }
+}
+
+// Event listeners
+document.getElementById('confirm-revoke').addEventListener('click', revokeAuthorization);
+
+// Close modal on overlay click
+document.getElementById('revokeModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideRevokeModal();
+    }
+});
+
+// Close modal on escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.getElementById('revokeModal').classList.contains('show')) {
+        hideRevokeModal();
+    }
+});
+
+// Load authorizations when page loads
+document.addEventListener('DOMContentLoaded', loadAuthorizations);
+</script>
+{% endblock %}

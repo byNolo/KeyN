@@ -1,0 +1,797 @@
+{% extends "base.html" %}
+
+{% block title %}Authorize Application - KeyN{% endblock %}
+
+{% block containerType %}
+<div class="oauth-consent-container">
+{% endblock %}
+
+{% block content %}
+<div class="oauth-consent-wrapper">
+    <!-- Logo Section -->
+    <div class="oauth-logo-section">
+        <img src="{{ url_for('static', filename='logos/light mode KeyN logo Transparent BG.svg') }}" 
+             alt="KeyN Logo" class="logo logo-light">
+        <img src="{{ url_for('static', filename='logos/dark mode KeyN logo Transparent BG.svg') }}" 
+             alt="KeyN Logo" class="logo logo-dark">
+    </div>
+
+    <div class="oauth-consent-card">
+        <!-- Header -->
+        <div class="oauth-header">
+            <div class="oauth-shield-icon">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <h1>Authorize Application</h1>
+            <p class="oauth-subtitle">Review permissions before continuing</p>
+        </div>
+
+        <!-- Main Content Area - Two Column Layout on Desktop -->
+        <div class="oauth-main-content">
+            <!-- Left Column: App Info & Request -->
+            <div class="oauth-left-column">
+                <!-- Application Info -->
+                <div class="app-info-section">
+                    <div class="app-identity">
+                        <h2 class="app-name">{{ client.name }}</h2>
+                        {% if client.description %}
+                            <p class="app-description">{{ client.description }}</p>
+                        {% endif %}
+                        {% if client.website_url %}
+                            <a href="{{ client.website_url }}" target="_blank" class="app-website">
+                                <i class="fas fa-external-link-alt"></i>
+                                <span>{{ client.website_url }}</span>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Request Info -->
+                <div class="request-info">
+                    <div class="request-message">
+                        <i class="fas fa-info-circle"></i>
+                        <span><strong>{{ client.name }}</strong> is requesting access to the following information:</span>
+                    </div>
+                </div>
+
+                <!-- Security Notice -->
+                <div class="security-notice">
+                    <div class="notice-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="notice-content">
+                        <p>Only authorize applications you trust. You can revoke access at any time from your account settings.</p>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <form method="post" class="oauth-actions">
+                    <input type="hidden" name="client_id" value="{{ client_id }}">
+                    <input type="hidden" name="redirect_uri" value="{{ redirect_uri }}">
+                    <input type="hidden" name="scope" value="{{ scope }}">
+                    <input type="hidden" name="state" value="{{ state }}">
+                    
+                    <button type="submit" name="action" value="approve" class="btn-authorize">
+                        <i class="fas fa-check"></i>
+                        <span>Authorize {{ client.name }}</span>
+                    </button>
+                    
+                    <button type="submit" name="action" value="deny" class="btn-cancel">
+                        <i class="fas fa-times"></i>
+                        <span>Cancel</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Right Column: Permissions List -->
+            <div class="oauth-right-column">
+                <div class="permissions-header">
+                    <h3>Requested Permissions</h3>
+                    <p>{{ client.name }} will have access to:</p>
+                </div>
+                
+                <div class="permissions-section">
+                    {% for scope in scopes %}
+                        <div class="permission-item">
+                            <div class="permission-icon">
+                                {% if scope.name == 'email' %}
+                                    <i class="fas fa-envelope"></i>
+                                {% elif scope.name == 'username' %}
+                                    <i class="fas fa-user"></i>
+                                {% elif scope.name in ['full_name', 'first_name', 'last_name', 'display_name'] %}
+                                    <i class="fas fa-id-badge"></i>
+                                {% elif scope.name == 'bio' %}
+                                    <i class="fas fa-quote-left"></i>
+                                {% elif scope.name == 'website' %}
+                                    <i class="fas fa-globe"></i>
+                                {% elif scope.name == 'location' %}
+                                    <i class="fas fa-map-marker-alt"></i>
+                                {% elif scope.name == 'date_of_birth' %}
+                                    <i class="fas fa-birthday-cake"></i>
+                                {% elif scope.name == 'created_at' %}
+                                    <i class="fas fa-calendar"></i>
+                                {% elif scope.name == 'is_verified' %}
+                                    <i class="fas fa-check-circle"></i>
+                                {% else %}
+                                    <i class="fas fa-info"></i>
+                                {% endif %}
+                            </div>
+                            <div class="permission-content">
+                                <h4 class="permission-title">{{ scope.display_name }}</h4>
+                                <p class="permission-description">{{ scope.description }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="oauth-footer">
+            <p>Powered by <strong>KeyN</strong> Authentication</p>
+        </div>
+    </div>
+</div>
+
+<style>
+/* OAuth Consent Screen Styles */
+.oauth-consent-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: var(--bg-color);
+}
+
+.oauth-consent-wrapper {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* Desktop Layout - Wider Container */
+@media (min-width: 768px) {
+  .oauth-consent-wrapper {
+    max-width: 900px;
+  }
+}
+
+.oauth-logo-section {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.oauth-logo-section .logo {
+  width: 120px;
+  height: auto;
+  transition: transform 0.3s ease;
+}
+
+.oauth-logo-section .logo:hover {
+  transform: scale(1.05);
+}
+
+.oauth-consent-card {
+  background: var(--card-bg);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+[data-theme="dark"] .oauth-consent-card {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Header Section */
+.oauth-header {
+  padding: 32px 32px 24px;
+  text-align: center;
+  background: linear-gradient(135deg, var(--card-bg) 0%, var(--bg-color) 100%);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.oauth-shield-icon {
+  width: 60px;
+  height: 60px;
+  background: var(--primary-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  color: white;
+  font-size: 24px;
+  box-shadow: 0 4px 12px rgba(21, 115, 71, 0.3);
+}
+
+[data-theme="dark"] .oauth-shield-icon {
+  box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
+}
+
+.oauth-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0 0 8px;
+}
+
+.oauth-subtitle {
+  color: var(--secondary-color);
+  font-size: 16px;
+  margin: 0;
+  font-weight: 400;
+}
+
+/* Main Content Layout */
+.oauth-main-content {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Desktop Two-Column Layout */
+@media (min-width: 768px) {
+  .oauth-main-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    min-height: 500px;
+  }
+}
+
+/* Left Column Styles */
+.oauth-left-column {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  .oauth-left-column {
+    border-right: 1px solid var(--border-color);
+    justify-content: space-between;
+  }
+}
+
+/* Right Column Styles */
+.oauth-right-column {
+  display: flex;
+  flex-direction: column;
+}
+
+/* App Info Section */
+.app-info-section {
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+@media (min-width: 768px) {
+  .app-info-section {
+    border-bottom: none;
+    flex-grow: 0;
+  }
+}
+
+.app-identity {
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .app-identity {
+    text-align: left;
+  }
+}
+
+.app-name {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin: 0 0 12px;
+}
+
+.app-description {
+  color: var(--secondary-color);
+  font-size: 16px;
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+.app-website {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary-color);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: rgba(21, 115, 71, 0.1);
+  transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .app-website {
+  background: rgba(52, 211, 153, 0.1);
+}
+
+.app-website:hover {
+  background: rgba(21, 115, 71, 0.15);
+  transform: translateY(-1px);
+}
+
+[data-theme="dark"] .app-website:hover {
+  background: rgba(52, 211, 153, 0.15);
+}
+
+/* Request Info */
+.request-info {
+  padding: 20px 32px;
+  background: rgba(59, 130, 246, 0.08);
+  border-bottom: 1px solid var(--border-color);
+}
+
+@media (min-width: 768px) {
+  .request-info {
+    border-bottom: none;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+  }
+}
+
+[data-theme="dark"] .request-info {
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.request-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: var(--text-color);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.request-message i {
+  color: #3b82f6;
+  font-size: 18px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+/* Permissions Header (Desktop Only) */
+.permissions-header {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .permissions-header {
+    display: block;
+    padding: 24px 32px 16px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .permissions-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0 0 8px;
+  }
+
+  .permissions-header p {
+    font-size: 14px;
+    color: var(--secondary-color);
+    margin: 0;
+  }
+}
+
+/* Permissions Section */
+.permissions-section {
+  padding: 24px 32px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+@media (min-width: 768px) {
+  .permissions-section {
+    flex: 1;
+    max-height: 450px;
+    padding: 16px 32px 24px;
+  }
+}
+
+.permission-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  margin-bottom: 12px;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+@media (min-width: 768px) {
+  .permission-item {
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+  }
+}
+
+.permission-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .permission-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.permission-item:last-child {
+  margin-bottom: 0;
+}
+
+.permission-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+  color: white;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(21, 115, 71, 0.2);
+}
+
+@media (min-width: 768px) {
+  .permission-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+    border-radius: 8px;
+  }
+}
+
+[data-theme="dark"] .permission-icon {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+  box-shadow: 0 2px 8px rgba(52, 211, 153, 0.2);
+}
+
+.permission-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.permission-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0 0 4px;
+}
+
+@media (min-width: 768px) {
+  .permission-title {
+    font-size: 14px;
+    margin: 0 0 2px;
+  }
+}
+
+.permission-description {
+  font-size: 14px;
+  color: var(--secondary-color);
+  margin: 0;
+  line-height: 1.4;
+}
+
+@media (min-width: 768px) {
+  .permission-description {
+    font-size: 12px;
+    line-height: 1.3;
+  }
+}
+
+/* Security Notice */
+.security-notice {
+  padding: 20px 32px;
+  background: rgba(245, 158, 11, 0.08);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .security-notice {
+    border-bottom: none;
+    flex-grow: 0;
+  }
+}
+
+[data-theme="dark"] .security-notice {
+  background: rgba(251, 191, 36, 0.12);
+}
+
+.notice-icon {
+  color: var(--warning-color);
+  font-size: 18px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.notice-content p {
+  color: var(--text-color);
+  font-size: 14px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Action Buttons */
+.oauth-actions {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .oauth-actions {
+    flex-grow: 0;
+    padding: 24px 32px 32px;
+  }
+}
+
+.btn-authorize,
+.btn-cancel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 24px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.btn-authorize {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+  color: white;
+  box-shadow: 0 4px 12px rgba(21, 115, 71, 0.3);
+}
+
+[data-theme="dark"] .btn-authorize {
+  box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
+}
+
+.btn-authorize:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(21, 115, 71, 0.4);
+}
+
+[data-theme="dark"] .btn-authorize:hover {
+  box-shadow: 0 6px 20px rgba(52, 211, 153, 0.4);
+}
+
+.btn-cancel {
+  background: var(--bg-color);
+  color: var(--secondary-color);
+  border: 2px solid var(--border-color);
+}
+
+.btn-cancel:hover {
+  background: var(--card-bg);
+  color: var(--text-color);
+  border-color: var(--secondary-color);
+  transform: translateY(-1px);
+}
+
+.btn-authorize:active,
+.btn-cancel:active {
+  transform: translateY(0);
+}
+
+/* Footer */
+.oauth-footer {
+  padding: 20px 32px;
+  text-align: center;
+  background: var(--bg-color);
+  border-top: 1px solid var(--border-color);
+}
+
+@media (min-width: 768px) {
+  .oauth-footer {
+    grid-column: 1 / -1;
+  }
+}
+
+.oauth-footer p {
+  color: var(--secondary-color);
+  font-size: 14px;
+  margin: 0;
+}
+
+.oauth-footer strong {
+  color: var(--primary-color);
+}
+
+/* Mobile Responsive Design */
+@media (max-width: 640px) {
+  .oauth-consent-container {
+    padding: 16px;
+  }
+
+  .oauth-consent-wrapper {
+    max-width: 100%;
+  }
+
+  .oauth-logo-section {
+    margin-bottom: 24px;
+  }
+
+  .oauth-logo-section .logo {
+    width: 100px;
+  }
+
+  .oauth-consent-card {
+    border-radius: 12px;
+  }
+
+  .oauth-header {
+    padding: 24px 24px 20px;
+  }
+
+  .oauth-shield-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+
+  .oauth-header h1 {
+    font-size: 24px;
+  }
+
+  .oauth-subtitle {
+    font-size: 14px;
+  }
+
+  .app-info-section {
+    padding: 20px 24px;
+  }
+
+  .app-name {
+    font-size: 20px;
+  }
+
+  .app-description {
+    font-size: 14px;
+  }
+
+  .request-info {
+    padding: 16px 24px;
+  }
+
+  .request-message {
+    font-size: 14px;
+    gap: 10px;
+  }
+
+  .permissions-section {
+    padding: 20px 24px;
+    max-height: 300px;
+  }
+
+  .permission-item {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .permission-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+
+  .permission-title {
+    font-size: 15px;
+  }
+
+  .permission-description {
+    font-size: 13px;
+  }
+
+  .security-notice {
+    padding: 16px 24px;
+    gap: 10px;
+  }
+
+  .notice-content p {
+    font-size: 13px;
+  }
+
+  .oauth-actions {
+    padding: 24px;
+    gap: 12px;
+  }
+
+  .btn-authorize,
+  .btn-cancel {
+    padding: 14px 20px;
+    font-size: 15px;
+    gap: 8px;
+  }
+
+  .oauth-footer {
+    padding: 16px 24px;
+  }
+
+  .oauth-footer p {
+    font-size: 13px;
+  }
+}
+
+/* Very small screens (< 480px) */
+@media (max-width: 480px) {
+  .oauth-consent-container {
+    padding: 12px;
+  }
+
+  .oauth-header,
+  .app-info-section,
+  .permissions-section,
+  .oauth-actions {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .request-info,
+  .security-notice {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .oauth-footer {
+    padding: 16px 20px;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .oauth-consent-card {
+    border-width: 2px;
+  }
+
+  .permission-item {
+    border-width: 2px;
+  }
+
+  .btn-cancel {
+    border-width: 3px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .oauth-consent-card,
+  .permission-item,
+  .btn-authorize,
+  .btn-cancel,
+  .app-website {
+    transition: none;
+  }
+
+  .oauth-logo-section .logo:hover {
+    transform: none;
+  }
+}
+</style>
+{% endblock %}

@@ -9,7 +9,7 @@ KeyN is a centralized Single Sign-On (SSO) authentication system that allows use
 |---------|--------|------------|----------------|
 | **Auth Server** | ✅ RUNNING | 6000 | https://auth-keyn.nolanbc.ca |
 | **UI Site** | ✅ RUNNING | 6001 | https://keyn.nolanbc.ca |
-| **Demo Client** | ✅ RUNNING | 6002 | https://demo-keyn.nolanbc.ca |
+| **OAuth Demo Client** | ✅ RUNNING | 6002 | https://demo-keyn.nolanbc.ca |
 
 ## 🌩️ Cloudflare Tunnels Configuration
 
@@ -59,6 +59,12 @@ cloudflared tunnel run YOUR_TUNNEL_NAME
 ### 5. Test SSO
 Visit: https://demo-keyn.nolanbc.ca
 
+**NEW**: The demo client now features OAuth-like scoped permissions! Users can:
+- Choose specific data to share (username, email, full name, etc.)
+- Grant granular permissions to applications
+- Manage authorized applications from their account
+- Experience a complete OAuth flow demonstration
+
 ## 🌐 Production Configuration
 
 ### Domain Cookie Settings:
@@ -97,7 +103,10 @@ cloudflared tunnel run YOUR_TUNNEL_NAME
 ### 4. Test the SSO Flow
 Once tunnel is running:
 1. Visit: `https://demo-keyn.nolanbc.ca`
-2. Click "Login with KeyN" 
+2. Click "Login with KeyN" (standard OAuth flow)
+3. Or click "Custom Login" (choose specific data scopes)
+4. Experience the OAuth consent interface
+5. Manage your authorizations at: `https://auth-keyn.nolanbc.ca/authorizations` 
 3. Register/Login at: `https://auth-keyn.nolanbc.ca`
 4. Verify redirect back works with authentication!
 

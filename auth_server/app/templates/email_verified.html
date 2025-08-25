@@ -18,7 +18,16 @@
     </ul>
   </div>
   <div class="link-container">
-    <a href="{{ url_for('auth.login') }}" class="btn-primary">Go to Login</a>
+    {% if current_user.is_authenticated %}
+      {% if current_user.needs_profile_completion() %}
+        <a href="{{ url_for('auth.complete_profile') }}" class="btn-primary">Complete Your Profile</a>
+        <a href="{{ url_for('auth.profile') }}" class="btn-secondary">Skip for Now</a>
+      {% else %}
+        <a href="{{ url_for('auth.profile') }}" class="btn-primary">Go to Profile</a>
+      {% endif %}
+    {% else %}
+      <a href="{{ url_for('auth.login') }}" class="btn-primary">Go to Login</a>
+    {% endif %}
   </div>
 </div>
 <style>
@@ -50,11 +59,28 @@
   border-radius: 6px;
   text-decoration: none;
   font-weight: bold;
-  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.08);
-  transition: background 0.2s;
+  display: inline-block;
+  margin: 8px;
+  transition: background 0.3s ease;
 }
 .btn-primary:hover {
   background: #047857;
+}
+.btn-secondary {
+  background: transparent;
+  color: #059669;
+  padding: 12px 32px;
+  border: 2px solid #059669;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: bold;
+  display: inline-block;
+  margin: 8px;
+  transition: all 0.3s ease;
+}
+.btn-secondary:hover {
+  background: #059669;
+  color: #fff;
 }
 </style>
 {% endblock %}

@@ -18,6 +18,7 @@ DEMO_URL="${KEYN_DEMO_CLIENT_URL:-https://demo-keyn.nolanbc.ca}"
 echo "Stopping existing services..."
 pkill -f "python.*run.py" 2>/dev/null
 pkill -f "python.*app.py" 2>/dev/null
+pkill -f "python.*oauth_app.py" 2>/dev/null
 pkill -f "python.*ui_site" 2>/dev/null
 pkill -f "python.*demo_client" 2>/dev/null
 sleep 2
@@ -43,9 +44,12 @@ UI_PID=$!
 echo "UI Site PID: $UI_PID"
 
 # Demo Client (port 6002)
-echo "🎮 Starting Demo Client on port 6002..."
+echo "🎮 Starting OAuth Demo Client on port 6002..."
 cd "$KEYN_DIR/demo_client"
-nohup "$VENV_PATH/bin/python" app.py > ../logs/demo_client.log 2>&1 &
+export KEYN_AUTH_SERVER_URL="$AUTH_URL"
+export KEYN_DEMO_CLIENT_URL="$DEMO_URL"
+export PORT=6002
+nohup "$VENV_PATH/bin/python" oauth_app.py > ../logs/demo_client.log 2>&1 &
 DEMO_PID=$!
 echo "Demo Client PID: $DEMO_PID"
 
@@ -57,14 +61,14 @@ echo "🚀 KeyN Services Started!"
 echo "========================="
 echo ""
 echo "Local Services (accessed via Cloudflare Tunnel):"
-echo "🏠 KeyN UI Site:    localhost:6001 → $UI_URL"
-echo "🔐 Auth Server:     localhost:6000 → $AUTH_URL"
-echo "🎮 Demo Client:     localhost:6002 → $DEMO_URL"
+echo "🏠 KeyN UI Site:         localhost:6001 → $UI_URL"
+echo "🔐 Auth Server:          localhost:6000 → $AUTH_URL"
+echo "🎮 OAuth Demo Client:    localhost:6002 → $DEMO_URL"
 echo ""
 echo "Process IDs:"
-echo "Auth Server: $AUTH_PID"
-echo "UI Site:     $UI_PID"
-echo "Demo Client: $DEMO_PID"
+echo "Auth Server:     $AUTH_PID"
+echo "UI Site:         $UI_PID"
+echo "OAuth Demo:      $DEMO_PID"
 echo ""
 echo "To stop services: ./scripts/stop_keyn_services.sh"
 echo "To view logs:     tail -f logs/[service].log"
@@ -87,7 +91,7 @@ else
 fi
 
 if ss -tln | grep -q ":6002"; then
-    echo "✅ Demo Client (port 6002) is running"
+    echo "✅ OAuth Demo Client (port 6002) is running"
 else
-    echo "❌ Demo Client (port 6002) failed to start"
+    echo "❌ OAuth Demo Client (port 6002) failed to start"
 fi

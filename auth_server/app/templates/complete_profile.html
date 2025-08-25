@@ -1,0 +1,466 @@
+{% extends "base.html" %}
+
+{% block title %}Complete Your Profile - KeyN{% endblock %}
+
+{% block containerType %}
+<div class="complete-profile-container">
+{% endblock %}
+
+{% block content %}
+<div class="complete-profile-wrapper">
+    <!-- Logo Section -->
+    <div class="profile-logo-section">
+        <img src="{{ url_for('static', filename='logos/light mode KeyN logo Transparent BG.svg') }}" 
+             alt="KeyN Logo" class="logo logo-light">
+        <img src="{{ url_for('static', filename='logos/dark mode KeyN logo Transparent BG.svg') }}" 
+             alt="KeyN Logo" class="logo logo-dark">
+    </div>
+
+    <div class="complete-profile-card">
+        <!-- Header -->
+        <div class="profile-header">
+            <div class="profile-welcome-icon">
+                <i class="fas fa-user-plus"></i>
+            </div>
+            <h1>Welcome to KeyN!</h1>
+            <p class="profile-subtitle">Let's set up your profile to get started</p>
+        </div>
+
+        <!-- Description -->
+        <div class="profile-description">
+            <div class="description-content">
+                <i class="fas fa-info-circle"></i>
+                <p>Adding some basic information helps personalize your experience and makes it easier for others to recognize you across connected applications.</p>
+            </div>
+        </div>
+
+        <!-- Form -->
+        <form method="POST" class="complete-profile-form">
+            {{ form.hidden_tag() }}
+            
+            <div class="form-sections">
+                <!-- Basic Information Section -->
+                <div class="form-section">
+                    <h3><i class="fas fa-user"></i> Basic Information</h3>
+                    <div class="form-row">
+                        <div class="form-group half">
+                            {{ form.first_name.label(class="form-label") }}
+                            {{ form.first_name(class="form-input", placeholder="Your first name") }}
+                            {% if form.first_name.errors %}
+                                <div class="form-error">
+                                    {% for error in form.first_name.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group half">
+                            {{ form.last_name.label(class="form-label") }}
+                            {{ form.last_name(class="form-input", placeholder="Your last name") }}
+                            {% if form.last_name.errors %}
+                                <div class="form-error">
+                                    {% for error in form.last_name.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.display_name.label(class="form-label") }}
+                        <p class="field-description">{{ form.display_name.description }}</p>
+                        {{ form.display_name(class="form-input", placeholder="How you'd like to be displayed") }}
+                        {% if form.display_name.errors %}
+                            <div class="form-error">
+                                {% for error in form.display_name.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Personal Information Section -->
+                <div class="form-section">
+                    <h3><i class="fas fa-address-card"></i> Personal Information <span class="optional-badge">Optional</span></h3>
+                    
+                    <div class="form-group">
+                        {{ form.bio.label(class="form-label") }}
+                        <p class="field-description">{{ form.bio.description }}</p>
+                        {{ form.bio(class="form-textarea", placeholder="A brief description about yourself...", rows="3") }}
+                        {% if form.bio.errors %}
+                            <div class="form-error">
+                                {% for error in form.bio.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group half">
+                            {{ form.location.label(class="form-label") }}
+                            <p class="field-description">{{ form.location.description }}</p>
+                            {{ form.location(class="form-input", placeholder="City, Country") }}
+                            {% if form.location.errors %}
+                                <div class="form-error">
+                                    {% for error in form.location.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group half">
+                            {{ form.date_of_birth.label(class="form-label") }}
+                            <p class="field-description">{{ form.date_of_birth.description }}</p>
+                            {{ form.date_of_birth(class="form-input") }}
+                            {% if form.date_of_birth.errors %}
+                                <div class="form-error">
+                                    {% for error in form.date_of_birth.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        {{ form.website.label(class="form-label") }}
+                        <p class="field-description">{{ form.website.description }}</p>
+                        {{ form.website(class="form-input", placeholder="https://yourwebsite.com") }}
+                        {% if form.website.errors %}
+                            <div class="form-error">
+                                {% for error in form.website.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="form-actions">
+                {{ form.skip(class="btn-secondary") }}
+                {{ form.submit(class="btn-primary") }}
+            </div>
+        </form>
+
+        <!-- Footer -->
+        <div class="profile-footer">
+            <p>You can always update this information later in your <a href="{{ url_for('auth.edit_profile') }}">profile settings</a></p>
+        </div>
+    </div>
+</div>
+
+<style>
+.complete-profile-container {
+    min-height: 100vh;
+    background: var(--background-color);
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.complete-profile-wrapper {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.profile-logo-section {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.profile-logo-section .logo {
+    height: 60px;
+    width: auto;
+    transition: transform 0.3s ease;
+}
+
+.profile-logo-section .logo:hover {
+    transform: scale(1.05);
+}
+
+.complete-profile-card {
+    background: var(--surface-color);
+    border-radius: 16px;
+    padding: 40px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+}
+
+.profile-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.profile-welcome-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    color: white;
+    font-size: 2rem;
+    box-shadow: var(--shadow-md);
+}
+
+.profile-header h1 {
+    color: var(--text-primary);
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+}
+
+.profile-subtitle {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.profile-description {
+    background: var(--info-bg);
+    border-left: 4px solid var(--info-color);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 32px;
+}
+
+.description-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.description-content i {
+    color: var(--info-color);
+    font-size: 1.2rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.description-content p {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.complete-profile-form {
+    margin-bottom: 24px;
+}
+
+.form-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.form-section {
+    background: var(--background-color);
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid var(--border-color);
+}
+
+.form-section h3 {
+    color: var(--text-primary);
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0 0 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.form-section h3 i {
+    color: var(--primary-color);
+}
+
+.optional-badge {
+    background: var(--warning-bg);
+    color: var(--warning-color);
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 12px;
+    margin-left: auto;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+}
+
+.form-group.half {
+    margin-bottom: 0;
+}
+
+.form-label {
+    color: var(--text-primary);
+    font-weight: 500;
+    margin-bottom: 6px;
+    font-size: 0.95rem;
+}
+
+.field-description {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    margin: 0 0 8px 0;
+    font-style: italic;
+}
+
+.form-input, .form-textarea {
+    background: var(--surface-color);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 1rem;
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.form-input:focus, .form-textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px var(--primary-color-alpha);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+}
+
+.form-error {
+    color: var(--error-color);
+    font-size: 0.875rem;
+    margin-top: 6px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-color);
+}
+
+.btn-primary, .btn-secondary {
+    padding: 14px 32px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 140px;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn-secondary {
+    background: var(--background-color);
+    color: var(--text-secondary);
+    border: 2px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background: var(--surface-color);
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+}
+
+.profile-footer {
+    text-align: center;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.profile-footer p {
+    color: var(--text-secondary);
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.profile-footer a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.profile-footer a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .complete-profile-container {
+        padding: 12px;
+    }
+    
+    .complete-profile-card {
+        padding: 24px;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+    
+    .form-group.half {
+        margin-bottom: 20px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn-primary, .btn-secondary {
+        width: 100%;
+    }
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .complete-profile-card {
+    background: var(--surface-color);
+}
+
+[data-theme="dark"] .form-section {
+    background: var(--background-color);
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .profile-logo-section .logo:hover,
+    .btn-primary:hover {
+        transform: none;
+    }
+}
+</style>
+{% endblock %}

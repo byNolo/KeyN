@@ -6,6 +6,7 @@ echo "🛑 Stopping KeyN Services..."
 
 pkill -f "python.*run.py"
 pkill -f "python.*app.py" 
+pkill -f "python.*oauth_app.py"
 pkill -f "python.*ui_site"
 pkill -f "python.*demo_client"
 pkill -f "python.*auth_server"

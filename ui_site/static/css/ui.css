@@ -255,6 +255,17 @@ h1 {
   background: #059669;
 }
 
+.btn-outline {
+  background: transparent;
+  color: var(--primary-color);
+  border: 2px solid var(--primary-color);
+}
+
+.btn-outline:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
 .features {
   margin-top: 30px;
 }

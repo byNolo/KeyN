@@ -125,3 +125,28 @@ def verify_email_token(token, app):
         return None
     except jwt.InvalidTokenError:
         return None
+
+def admin_required(f):
+    """Decorator to require admin access"""
+    from functools import wraps
+    from flask_login import current_user
+    from flask import abort, jsonify, request
+    
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            if request.is_json:
+                return jsonify({"error": "Authentication required"}), 401
+            else:
+                from flask import redirect, url_for
+                return redirect(url_for('auth.login'))
+        
+        if not current_user.is_admin:
+            if request.is_json:
+                return jsonify({"error": "Admin access required"}), 403
+            else:
+                from flask import redirect, url_for
+                return redirect(url_for('auth.unauthorized'))
+                
+        return f(*args, **kwargs)
+    return decorated_function

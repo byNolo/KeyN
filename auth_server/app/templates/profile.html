@@ -1,0 +1,661 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - KeyN{% endblock %}
+
+{% block containerType %}
+<div class="profile-container">
+{% endblock %}
+
+{% block content %}
+    <!-- Profile Completion Prompt -->
+    {% if user.needs_profile_completion() %}
+    <div class="profile-completion-prompt">
+        <div class="prompt-content">
+            <div class="prompt-icon">
+                <i class="fas fa-user-plus"></i>
+            </div>
+            <div class="prompt-text">
+                <h3>Complete Your Profile</h3>
+                <p>Add some basic information to personalize your experience and help others recognize you across connected applications.</p>
+            </div>
+            <div class="prompt-actions">
+                <a href="{{ url_for('auth.complete_profile') }}" class="btn btn-completion">
+                    <i class="fas fa-arrow-right"></i>
+                    <span>Complete Now</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Header Section -->
+    <div class="profile-header">
+        <div class="profile-avatar">
+            <div class="avatar-icon">
+                <i class="fas fa-user"></i>
+            </div>
+        </div>
+        <div class="profile-info">
+            <h1>{{ user.get_full_name() or user.username }}</h1>
+            <p class="profile-username">@{{ user.username }}</p>
+            {% if user.bio %}
+            <p class="profile-bio">{{ user.bio }}</p>
+            {% endif %}
+        </div>
+        <div class="profile-actions">
+            <a href="{{ url_for('auth.edit_profile') }}" class="btn btn-primary">
+                <i class="fas fa-edit"></i>
+                <span>Edit Profile</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Profile Details Cards -->
+    <div class="profile-content">
+        <!-- Basic Information -->
+        <div class="profile-card">
+            <div class="card-header">
+                <div class="card-icon">
+                    <i class="fas fa-id-card"></i>
+                </div>
+                <h2>Basic Information</h2>
+            </div>
+            <div class="card-content">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>First Name</label>
+                        <span>{{ user.first_name or 'Not set' }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Last Name</label>
+                        <span>{{ user.last_name or 'Not set' }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Display Name</label>
+                        <span>{{ user.display_name or 'Not set' }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Email</label>
+                        <span>{{ user.email }}</span>
+                    </div>
+                    {% if user.date_of_birth %}
+                    <div class="info-item">
+                        <label>Date of Birth</label>
+                        <span>{{ user.date_of_birth.strftime('%B %d, %Y') }}</span>
+                    </div>
+                    {% endif %}
+                    {% if user.location %}
+                    <div class="info-item">
+                        <label>Location</label>
+                        <span>{{ user.location }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact & Links -->
+        {% if user.website %}
+        <div class="profile-card">
+            <div class="card-header">
+                <div class="card-icon">
+                    <i class="fas fa-link"></i>
+                </div>
+                <h2>Links</h2>
+            </div>
+            <div class="card-content">
+                <div class="link-item">
+                    <i class="fas fa-globe"></i>
+                    <a href="{{ user.website }}" target="_blank" rel="noopener noreferrer">
+                        {{ user.website }}
+                        <i class="fas fa-external-link-alt"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Account Information -->
+        <div class="profile-card">
+            <div class="card-header">
+                <div class="card-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h2>Account Information</h2>
+            </div>
+            <div class="card-content">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Username</label>
+                        <span>{{ user.username }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Account Created</label>
+                        <span>{{ user.created_at.strftime('%B %d, %Y') }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Email Verified</label>
+                        <span class="status {{ 'verified' if user.is_verified else 'unverified' }}">
+                            <i class="fas {{ 'fa-check-circle' if user.is_verified else 'fa-times-circle' }}"></i>
+                            {{ 'Verified' if user.is_verified else 'Not Verified' }}
+                        </span>
+                    </div>
+                    {% if user.last_login %}
+                    <div class="info-item">
+                        <label>Last Login</label>
+                        <span>{{ user.last_login.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="profile-card">
+            <div class="card-header">
+                <div class="card-icon">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <h2>Account Actions</h2>
+            </div>
+            <div class="card-content">
+                <div class="action-buttons">
+                    <a href="{{ url_for('auth.change_password') }}" class="action-btn">
+                        <i class="fas fa-key"></i>
+                        <div>
+                            <strong>Change Password</strong>
+                            <small>Update your account password</small>
+                        </div>
+                    </a>
+                    <a href="{{ url_for('auth.sessions_page') }}" class="action-btn">
+                        <i class="fas fa-devices"></i>
+                        <div>
+                            <strong>Manage Sessions</strong>
+                            <small>View and revoke active sessions</small>
+                        </div>
+                    </a>
+                    <a href="{{ url_for('auth.authorizations_page') }}" class="action-btn">
+                        <i class="fas fa-shield-check"></i>
+                        <div>
+                            <strong>App Permissions</strong>
+                            <small>Manage connected applications</small>
+                        </div>
+                    </a>
+                    {% if user.is_admin %}
+                    <a href="{{ url_for('auth.admin_interface') }}" class="action-btn admin-action">
+                        <i class="fas fa-user-shield"></i>
+                        <div>
+                            <strong>Admin Panel</strong>
+                            <small>System administration</small>
+                        </div>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Profile Page Styles */
+.profile-container {
+    min-height: 100vh;
+    background: var(--bg-color);
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Profile Header */
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 32px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .profile-header {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.profile-avatar {
+    flex-shrink: 0;
+}
+
+.avatar-icon {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 40px;
+    box-shadow: 0 8px 20px rgba(21, 115, 71, 0.3);
+}
+
+[data-theme="dark"] .avatar-icon {
+    box-shadow: 0 8px 20px rgba(52, 211, 153, 0.3);
+}
+
+.profile-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.profile-info h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-color);
+    margin: 0 0 8px;
+}
+
+.profile-username {
+    color: var(--secondary-color);
+    font-size: 18px;
+    margin: 0 0 12px;
+    font-weight: 500;
+}
+
+.profile-bio {
+    color: var(--text-color);
+    font-size: 16px;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.profile-actions {
+    flex-shrink: 0;
+}
+
+/* Profile Content */
+.profile-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 24px;
+}
+
+.profile-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+[data-theme="dark"] .profile-card {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.profile-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="dark"] .profile-card:hover {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Card Headers */
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 24px 28px 20px;
+    border-bottom: 1px solid var(--border-color);
+    background: linear-gradient(135deg, var(--card-bg) 0%, var(--bg-color) 100%);
+}
+
+.card-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--primary-color);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.card-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
+}
+
+/* Card Content */
+.card-content {
+    padding: 28px;
+}
+
+.info-grid {
+    display: grid;
+    gap: 20px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.info-item label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--secondary-color);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-item span {
+    font-size: 16px;
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+/* Status Indicators */
+.status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+}
+
+.status.verified {
+    color: var(--success-color);
+}
+
+.status.unverified {
+    color: #ef4444;
+}
+
+/* Links */
+.link-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: var(--bg-color);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.link-item i:first-child {
+    color: var(--primary-color);
+    font-size: 18px;
+}
+
+.link-item a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.link-item a:hover {
+    color: var(--primary-hover);
+}
+
+.link-item a i:last-child {
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    text-decoration: none;
+    color: var(--text-color);
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    background: var(--card-bg);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+}
+
+.action-btn i {
+    color: var(--primary-color);
+    font-size: 20px;
+    width: 24px;
+    text-align: center;
+}
+
+.action-btn strong {
+    display: block;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.action-btn small {
+    display: block;
+    color: var(--secondary-color);
+    font-size: 14px;
+}
+
+.admin-action {
+    background: linear-gradient(135deg, rgba(21, 115, 71, 0.1), rgba(52, 211, 153, 0.05));
+    border-color: rgba(21, 115, 71, 0.2);
+}
+
+[data-theme="dark"] .admin-action {
+    background: linear-gradient(135deg, rgba(52, 211, 153, 0.1), rgba(52, 211, 153, 0.05));
+    border-color: rgba(52, 211, 153, 0.2);
+}
+
+.admin-action:hover {
+    border-color: var(--primary-color);
+    background: linear-gradient(135deg, rgba(21, 115, 71, 0.15), rgba(52, 211, 153, 0.1));
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    justify-content: center;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: 0 2px 8px rgba(21, 115, 71, 0.3);
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+    box-shadow: 0 4px 12px rgba(21, 115, 71, 0.4);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .profile-container {
+        padding: 16px;
+    }
+
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+        padding: 24px;
+    }
+
+    .avatar-icon {
+        width: 80px;
+        height: 80px;
+        font-size: 32px;
+    }
+
+    .profile-info h1 {
+        font-size: 24px;
+    }
+
+    .profile-content {
+        grid-template-columns: 1fr;
+    }
+
+    .card-content {
+        padding: 20px;
+    }
+
+    .action-btn {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-header {
+        padding: 20px;
+    }
+
+    .card-header {
+        padding: 20px 20px 16px;
+    }
+
+    .card-content {
+        padding: 16px;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .profile-card,
+    .action-btn,
+    .btn {
+        transition: none;
+    }
+
+    .profile-card:hover,
+    .action-btn:hover,
+    .btn:hover {
+        transform: none;
+    }
+}
+
+/* Profile Completion Prompt Styles */
+.profile-completion-prompt {
+    background: linear-gradient(135deg, var(--info-bg), var(--primary-bg));
+    border: 2px solid var(--primary-color);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 32px;
+    box-shadow: var(--shadow-lg);
+}
+
+.prompt-content {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.prompt-icon {
+    width: 60px;
+    height: 60px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.prompt-text {
+    flex: 1;
+}
+
+.prompt-text h3 {
+    color: var(--text-primary);
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+}
+
+.prompt-text p {
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.btn-completion {
+    background: var(--primary-color);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-completion:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+@media (max-width: 768px) {
+    .prompt-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 16px;
+    }
+    
+    .prompt-text {
+        order: 1;
+    }
+    
+    .prompt-actions {
+        order: 2;
+    }
+    
+    .prompt-icon {
+        order: 0;
+    }
+}
+</style>
+{% endblock %}

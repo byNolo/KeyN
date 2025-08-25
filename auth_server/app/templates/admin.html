@@ -1,324 +1,1169 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KeyN Admin - Security Management</title>
-    
-    <!-- Main CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v={{ cache_version }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v={{ cache_version }}">
-    
-    <!-- Favicon with theme support -->
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logos/favicon-light.svg') }}?v={{ cache_version }}" media="(prefers-color-scheme: light)">
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logos/favicon-dark.svg') }}?v={{ cache_version }}" media="(prefers-color-scheme: dark)">
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logos/favicon-light.svg') }}?v={{ cache_version }}">
-    
-    <!-- Theme color for mobile browsers -->
-    <meta name="theme-color" content="#2563eb">
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logos/light-mode-keyn-logo.svg') }}">
-</head>
-<body>
-    <div class="admin-container">
-        <div class="admin-header">
-            <img src="{{ url_for('static', filename='logos/light-mode-keyn-logo.svg') }}" 
-                 alt="KeyN Logo" class="logo logo-light">
-            <img src="{{ url_for('static', filename='logos/dark-mode-keyn-logo.svg') }}" 
-                 alt="KeyN Logo" class="logo logo-dark">
+{% extends "base.html" %}
+
+{% block title %}Admin Panel - KeyN{% endblock %}
+
+{% block containerType %}
+<div class="admin-container">
+{% endblock %}
+
+{% block content %}
+    <!-- Header Section -->
+    <div class="admin-header">
+        <div class="admin-logo-section">
+            <div class="admin-shield-icon">
+                <i class="fas fa-shield-alt"></i>
+            </div>
             <h1>KeyN Security Management</h1>
+            <p class="admin-subtitle">Comprehensive security monitoring and control center</p>
         </div>
         
-        <div id="alerts"></div>
-
-        <!-- Ban IP Section -->
-        <div class="admin-section">
-            <h2>Ban IP Address</h2>
-            <form id="banIpForm">
-                <div class="form-group">
-                    <label for="ipAddress">IP Address:</label>
-                    <input type="text" id="ipAddress" name="ipAddress" placeholder="192.168.1.1" required>
-                </div>
-                <div class="form-group">
-                    <label for="ipReason">Reason:</label>
-                    <input type="text" id="ipReason" name="ipReason" placeholder="Suspicious activity" required>
-                </div>
-                <div class="form-group">
-                    <label for="ipDuration">Duration (hours, leave empty for permanent):</label>
-                    <input type="number" id="ipDuration" name="ipDuration" placeholder="24">
-                </div>
-                <button type="submit" class="btn btn-danger">Ban IP</button>
-            </form>
-        </div>
-
-        <!-- Ban Device Section -->
-        <div class="admin-section">
-            <h2>Ban Device</h2>
-            <form id="banDeviceForm">
-                <div class="form-group">
-                    <label for="deviceFingerprint">Device Fingerprint:</label>
-                    <input type="text" id="deviceFingerprint" name="deviceFingerprint" placeholder="Device fingerprint hash" required>
-                </div>
-                <div class="form-group">
-                    <label for="deviceReason">Reason:</label>
-                    <input type="text" id="deviceReason" name="deviceReason" placeholder="Malicious behavior" required>
-                </div>
-                <div class="form-group">
-                    <label for="deviceDuration">Duration (hours, leave empty for permanent):</label>
-                    <input type="number" id="deviceDuration" name="deviceDuration" placeholder="24">
-                </div>
-                <button type="submit" class="btn btn-danger">Ban Device</button>
-            </form>
-        </div>
-
-        <!-- Unban Section -->
-        <div class="admin-section">
-            <h2>Remove Bans</h2>
-            <div class="form-row">
+        <!-- Admin Welcome -->
+        <div class="admin-welcome">
+            <div class="welcome-content">
+                <i class="fas fa-user-shield"></i>
                 <div>
-                    <form id="unbanIpForm">
-                        <div class="form-group">
-                            <label for="unbanIpAddress">Unban IP Address:</label>
-                            <input type="text" id="unbanIpAddress" name="unbanIpAddress" placeholder="192.168.1.1" required>
-                        </div>
-                        <button type="submit" class="btn btn-success">Unban IP</button>
-                    </form>
+                    <span class="welcome-text">Welcome back, Administrator</span>
+                    <span class="welcome-user">{{ current_user.get_full_name() }}</span>
                 </div>
-                <div>
-                    <form id="unbanDeviceForm">
-                        <div class="form-group">
-                            <label for="unbanDeviceFingerprint">Unban Device:</label>
-                            <input type="text" id="unbanDeviceFingerprint" name="unbanDeviceFingerprint" placeholder="Device fingerprint" required>
-                        </div>
-                        <button type="submit" class="btn btn-success">Unban Device</button>
-                    </form>
+            </div>
+            <a href="{{ url_for('auth.profile') }}" class="back-to-dashboard">
+                <i class="fas fa-arrow-left"></i>
+                <span>Back to Profile</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Alerts Container -->
+    <div id="alerts"></div>
+
+    <!-- Admin Dashboard Cards -->
+    <div class="admin-dashboard">
+        <!-- Ban Management Section -->
+        <div class="admin-card">
+            <div class="card-header">
+                <div class="card-icon ban-icon">
+                    <i class="fas fa-ban"></i>
+                </div>
+                <div class="card-title">
+                    <h2>Ban Management</h2>
+                    <p>Block IP addresses and devices from accessing the system</p>
+                </div>
+            </div>
+            
+            <div class="card-content">
+                <div class="ban-forms">
+                    <!-- Ban IP Form -->
+                    <div class="ban-form-section">
+                        <h3><i class="fas fa-globe"></i> Ban IP Address</h3>
+                        <form id="banIpForm" class="ban-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="ipAddress">IP Address</label>
+                                    <input type="text" id="ipAddress" name="ipAddress" 
+                                           placeholder="192.168.1.1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="ipDuration">Duration (hours)</label>
+                                    <input type="number" id="ipDuration" name="ipDuration" 
+                                           placeholder="24 (empty = permanent)">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="ipReason">Reason</label>
+                                <input type="text" id="ipReason" name="ipReason" 
+                                       placeholder="Suspicious activity detected" required>
+                            </div>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-ban"></i>
+                                <span>Ban IP Address</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Ban Device Form -->
+                    <div class="ban-form-section">
+                        <h3><i class="fas fa-desktop"></i> Ban Device</h3>
+                        <form id="banDeviceForm" class="ban-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="deviceFingerprint">Device Fingerprint</label>
+                                    <input type="text" id="deviceFingerprint" name="deviceFingerprint" 
+                                           placeholder="Device fingerprint hash" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="deviceDuration">Duration (hours)</label>
+                                    <input type="number" id="deviceDuration" name="deviceDuration" 
+                                           placeholder="24 (empty = permanent)">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="deviceReason">Reason</label>
+                                <input type="text" id="deviceReason" name="deviceReason" 
+                                       placeholder="Malicious behavior detected" required>
+                            </div>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-ban"></i>
+                                <span>Ban Device</span>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- View Bans Section -->
-        <div class="admin-section">
-            <h2>Active Bans</h2>
-            <button onclick="loadBans()" class="btn btn-success">Refresh Bans</button>
-            <div id="bansContainer"></div>
+        <!-- Unban Management Section -->
+        <div class="admin-card">
+            <div class="card-header">
+                <div class="card-icon unban-icon">
+                    <i class="fas fa-unlock"></i>
+                </div>
+                <div class="card-title">
+                    <h2>Remove Bans</h2>
+                    <p>Restore access for previously banned IPs and devices</p>
+                </div>
+            </div>
+            
+            <div class="card-content">
+                <div class="unban-forms">
+                    <div class="unban-form-section">
+                        <h3><i class="fas fa-globe"></i> Unban IP Address</h3>
+                        <form id="unbanIpForm" class="unban-form">
+                            <div class="form-group">
+                                <label for="unbanIpAddress">IP Address</label>
+                                <input type="text" id="unbanIpAddress" name="unbanIpAddress" 
+                                       placeholder="192.168.1.1" required>
+                            </div>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-unlock"></i>
+                                <span>Unban IP</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="unban-form-section">
+                        <h3><i class="fas fa-desktop"></i> Unban Device</h3>
+                        <form id="unbanDeviceForm" class="unban-form">
+                            <div class="form-group">
+                                <label for="unbanDeviceFingerprint">Device Fingerprint</label>
+                                <input type="text" id="unbanDeviceFingerprint" name="unbanDeviceFingerprint" 
+                                       placeholder="Device fingerprint hash" required>
+                            </div>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-unlock"></i>
+                                <span>Unban Device</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Recent Login Attempts -->
-        <div class="admin-section">
-            <h2>Recent Login Attempts</h2>
-            <button onclick="loadLoginAttempts()" class="btn btn-success">Load Recent Attempts</button>
-            <div id="attemptsContainer"></div>
+        <!-- Active Bans Section -->
+        <div class="admin-card full-width">
+            <div class="card-header">
+                <div class="card-icon bans-icon">
+                    <i class="fas fa-list-alt"></i>
+                </div>
+                <div class="card-title">
+                    <h2>Active Bans</h2>
+                    <p>Monitor and manage all currently active security bans</p>
+                </div>
+                <button onclick="loadBans()" class="btn btn-secondary refresh-btn">
+                    <i class="fas fa-sync-alt"></i>
+                    <span>Refresh</span>
+                </button>
+            </div>
+            
+            <div class="card-content">
+                <div id="bansContainer" class="bans-container">
+                    <div class="loading-state">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading active bans...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Login Attempts Section -->
+        <div class="admin-card full-width">
+            <div class="card-header">
+                <div class="card-icon attempts-icon">
+                    <i class="fas fa-history"></i>
+                </div>
+                <div class="card-title">
+                    <h2>Recent Login Attempts</h2>
+                    <p>Monitor authentication activity and security events</p>
+                </div>
+                <button onclick="loadLoginAttempts()" class="btn btn-secondary refresh-btn">
+                    <i class="fas fa-sync-alt"></i>
+                    <span>Refresh</span>
+                </button>
+            </div>
+            
+            <div class="card-content">
+                <div id="attemptsContainer" class="attempts-container">
+                    <div class="loading-state">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading login attempts...</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+</div>
 
-    <!-- JavaScript -->
-    <script src="{{ url_for('static', filename='js/theme.js') }}?v={{ cache_version }}"></script>
+<style>
+/* Admin Panel Styles */
+.admin-container {
+    min-height: 100vh;
+    background: var(--bg-color);
+    padding: 20px;
+}
 
-    <script>
-        function showAlert(message, type = 'success') {
-            const alertsDiv = document.getElementById('alerts');
-            const alertClass = type === 'error' ? 'alert-error' : 'alert-success';
-            alertsDiv.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
-            setTimeout(() => {
-                alertsDiv.innerHTML = '';
-            }, 5000);
-        }
+/* Header Section */
+.admin-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
 
-        // Ban IP Form
-        document.getElementById('banIpForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const data = {
-                ip_address: formData.get('ipAddress'),
-                reason: formData.get('ipReason'),
-                duration_hours: formData.get('ipDuration') || null
-            };
+.admin-logo-section {
+    margin-bottom: 24px;
+}
 
-            try {
-                const response = await fetch('/admin/ban-ip', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(data)
-                });
-                const result = await response.json();
-                
-                if (result.success) {
-                    showAlert(result.message);
-                    e.target.reset();
-                    loadBans();
-                } else {
-                    showAlert(result.error, 'error');
-                }
-            } catch (error) {
-                showAlert('Error banning IP: ' + error.message, 'error');
-            }
+.admin-shield-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    color: white;
+    font-size: 32px;
+    box-shadow: 0 8px 25px rgba(21, 115, 71, 0.3);
+}
+
+[data-theme="dark"] .admin-shield-icon {
+    box-shadow: 0 8px 25px rgba(52, 211, 153, 0.3);
+}
+
+.admin-header h1 {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--text-color);
+    margin: 0 0 8px;
+}
+
+.admin-subtitle {
+    color: var(--secondary-color);
+    font-size: 18px;
+    margin: 0;
+    font-weight: 400;
+}
+
+/* Admin Welcome */
+.admin-welcome {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 32px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .admin-welcome {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.welcome-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.welcome-content i {
+    color: var(--primary-color);
+    font-size: 24px;
+}
+
+.welcome-text {
+    display: block;
+    color: var(--secondary-color);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.welcome-user {
+    display: block;
+    color: var(--text-color);
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.back-to-dashboard {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: rgba(21, 115, 71, 0.1);
+    border: 1px solid rgba(21, 115, 71, 0.2);
+    transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .back-to-dashboard {
+    background: rgba(52, 211, 153, 0.1);
+    border-color: rgba(52, 211, 153, 0.2);
+}
+
+.back-to-dashboard:hover {
+    background: rgba(21, 115, 71, 0.15);
+    border-color: rgba(21, 115, 71, 0.3);
+    transform: translateY(-1px);
+}
+
+[data-theme="dark"] .back-to-dashboard:hover {
+    background: rgba(52, 211, 153, 0.15);
+    border-color: rgba(52, 211, 153, 0.3);
+}
+
+/* Alerts */
+#alerts {
+    margin-bottom: 24px;
+}
+
+.alert {
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+    animation: slideIn 0.3s ease;
+}
+
+.alert::before {
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    font-size: 18px;
+}
+
+.alert-success {
+    background: rgba(34, 197, 94, 0.1);
+    color: var(--success-color);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.alert-success::before {
+    content: "\f00c";
+}
+
+.alert-error {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.alert-error::before {
+    content: "\f071";
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Dashboard Grid */
+.admin-dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 24px;
+}
+
+.admin-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+[data-theme="dark"] .admin-card {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.admin-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="dark"] .admin-card:hover {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.admin-card.full-width {
+    grid-column: 1 / -1;
+}
+
+/* Card Headers */
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 24px 28px 20px;
+    border-bottom: 1px solid var(--border-color);
+    background: linear-gradient(135deg, var(--card-bg) 0%, var(--bg-color) 100%);
+}
+
+.card-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.ban-icon {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.unban-icon {
+    background: linear-gradient(135deg, var(--success-color), #059669);
+}
+
+.bans-icon {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.attempts-icon {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.card-title {
+    flex: 1;
+}
+
+.card-title h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0 0 4px;
+}
+
+.card-title p {
+    color: var(--secondary-color);
+    font-size: 14px;
+    margin: 0;
+}
+
+.refresh-btn {
+    margin-left: auto;
+}
+
+/* Card Content */
+.card-content {
+    padding: 28px;
+}
+
+/* Form Styles */
+.ban-forms,
+.unban-forms {
+    display: grid;
+    gap: 32px;
+}
+
+.ban-form-section,
+.unban-form-section {
+    padding: 24px;
+    background: var(--bg-color);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.ban-form-section h3,
+.unban-form-section h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0 0 20px;
+}
+
+.ban-form-section h3 i,
+.unban-form-section h3 i {
+    color: var(--primary-color);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    color: var(--text-color);
+    font-weight: 500;
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--card-bg);
+    color: var(--text-color);
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(21, 115, 71, 0.1);
+}
+
+[data-theme="dark"] .form-group input:focus {
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.1);
+}
+
+.form-group input::placeholder {
+    color: var(--secondary-color);
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    justify-content: center;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: white;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.btn-success {
+    background: var(--success-color);
+    color: white;
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+}
+
+.btn-success:hover {
+    background: #059669;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+}
+
+.btn-secondary {
+    background: var(--border-color);
+    color: var(--text-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-secondary:hover {
+    background: var(--secondary-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Loading States */
+.loading-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--secondary-color);
+}
+
+.loading-state i {
+    font-size: 32px;
+    margin-bottom: 16px;
+    color: var(--primary-color);
+}
+
+.loading-state p {
+    margin: 0;
+    font-size: 16px;
+}
+
+/* Tables */
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: var(--card-bg);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .admin-table {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.admin-table th {
+    background: var(--primary-color);
+    color: white;
+    padding: 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.admin-table td {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-color);
+    font-size: 14px;
+}
+
+.admin-table tr:last-child td {
+    border-bottom: none;
+}
+
+.admin-table tr:hover {
+    background: var(--bg-color);
+}
+
+/* Table Content Styles */
+.ip-address {
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+    background: var(--bg-color);
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    font-size: 13px;
+}
+
+.fingerprint {
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+    font-size: 12px;
+    color: var(--secondary-color);
+    word-break: break-all;
+    max-width: 200px;
+}
+
+.timestamp {
+    color: var(--secondary-color);
+    font-size: 13px;
+}
+
+.status-success {
+    color: var(--success-color);
+    font-weight: 600;
+}
+
+.status-failed {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+/* Empty States */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--secondary-color);
+}
+
+.empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    color: var(--border-color);
+}
+
+.empty-state h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0 0 8px;
+}
+
+.empty-state p {
+    font-size: 14px;
+    margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .admin-dashboard {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-container {
+        padding: 16px;
+    }
+
+    .admin-header h1 {
+        font-size: 28px;
+    }
+
+    .admin-subtitle {
+        font-size: 16px;
+    }
+
+    .admin-welcome {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .card-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+    }
+
+    .card-content {
+        padding: 20px;
+    }
+
+    .admin-table {
+        font-size: 12px;
+    }
+
+    .admin-table th,
+    .admin-table td {
+        padding: 12px 8px;
+    }
+
+    .fingerprint {
+        max-width: 150px;
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-container {
+        padding: 12px;
+    }
+
+    .card-content {
+        padding: 16px;
+    }
+
+    .ban-form-section,
+    .unban-form-section {
+        padding: 16px;
+    }
+
+    .btn {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .admin-card,
+    .btn,
+    .form-group input {
+        transition: none;
+    }
+
+    .admin-card:hover,
+    .btn:hover {
+        transform: none;
+    }
+
+    .alert {
+        animation: none;
+    }
+
+    .loading-state i {
+        animation: none;
+    }
+}
+</style>
+
+<script>
+// Enhanced admin functionality
+let refreshInterval = null;
+
+function showAlert(message, type = 'success') {
+    const alertsDiv = document.getElementById('alerts');
+    const alertClass = type === 'error' ? 'alert-error' : 'alert-success';
+    alertsDiv.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+    setTimeout(() => {
+        alertsDiv.innerHTML = '';
+    }, 5000);
+}
+
+// Ban IP Form
+document.getElementById('banIpForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = {
+        ip_address: formData.get('ipAddress'),
+        reason: formData.get('ipReason'),
+        duration_hours: formData.get('ipDuration') || null
+    };
+
+    try {
+        const response = await fetch('/admin/ban-ip', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
         });
-
-        // Ban Device Form
-        document.getElementById('banDeviceForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const data = {
-                device_fingerprint: formData.get('deviceFingerprint'),
-                reason: formData.get('deviceReason'),
-                duration_hours: formData.get('deviceDuration') || null
-            };
-
-            try {
-                const response = await fetch('/admin/ban-device', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(data)
-                });
-                const result = await response.json();
-                
-                if (result.success) {
-                    showAlert(result.message);
-                    e.target.reset();
-                    loadBans();
-                } else {
-                    showAlert(result.error, 'error');
-                }
-            } catch (error) {
-                showAlert('Error banning device: ' + error.message, 'error');
-            }
-        });
-
-        // Unban IP Form
-        document.getElementById('unbanIpForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const data = {
-                ip_address: formData.get('unbanIpAddress')
-            };
-
-            try {
-                const response = await fetch('/admin/unban-ip', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(data)
-                });
-                const result = await response.json();
-                
-                if (result.success) {
-                    showAlert(result.message);
-                    e.target.reset();
-                    loadBans();
-                } else {
-                    showAlert(result.error, 'error');
-                }
-            } catch (error) {
-                showAlert('Error unbanning IP: ' + error.message, 'error');
-            }
-        });
-
-        // Unban Device Form
-        document.getElementById('unbanDeviceForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const data = {
-                device_fingerprint: formData.get('unbanDeviceFingerprint')
-            };
-
-            try {
-                const response = await fetch('/admin/unban-device', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(data)
-                });
-                const result = await response.json();
-                
-                if (result.success) {
-                    showAlert(result.message);
-                    e.target.reset();
-                    loadBans();
-                } else {
-                    showAlert(result.error, 'error');
-                }
-            } catch (error) {
-                showAlert('Error unbanning device: ' + error.message, 'error');
-            }
-        });
-
-        // Load bans
-        async function loadBans() {
-            try {
-                const response = await fetch('/admin/bans');
-                const data = await response.json();
-                
-                let html = '<h3>IP Bans</h3>';
-                if (data.ip_bans.length > 0) {
-                    html += '<table class="admin-table"><tr><th>IP Address</th><th>Reason</th><th>Banned At</th><th>Expires At</th></tr>';
-                    data.ip_bans.forEach(ban => {
-                        html += `<tr>
-                            <td><span class="ip-address">${ban.ip_address}</span></td>
-                            <td>${ban.reason}</td>
-                            <td><span class="timestamp">${new Date(ban.banned_at).toLocaleString()}</span></td>
-                            <td><span class="timestamp">${ban.expires_at ? new Date(ban.expires_at).toLocaleString() : 'Permanent'}</span></td>
-                        </tr>`;
-                    });
-                    html += '</table>';
-                } else {
-                    html += '<p>No active IP bans</p>';
-                }
-
-                html += '<h3>Device Bans</h3>';
-                if (data.device_bans.length > 0) {
-                    html += '<table class="admin-table"><tr><th>Device Fingerprint</th><th>Reason</th><th>Banned At</th><th>Expires At</th></tr>';
-                    data.device_bans.forEach(ban => {
-                        html += `<tr>
-                            <td class="fingerprint">${ban.device_fingerprint}</td>
-                            <td>${ban.reason}</td>
-                            <td><span class="timestamp">${new Date(ban.banned_at).toLocaleString()}</span></td>
-                            <td><span class="timestamp">${ban.expires_at ? new Date(ban.expires_at).toLocaleString() : 'Permanent'}</span></td>
-                        </tr>`;
-                    });
-                    html += '</table>';
-                } else {
-                    html += '<p>No active device bans</p>';
-                }
-
-                document.getElementById('bansContainer').innerHTML = html;
-            } catch (error) {
-                showAlert('Error loading bans: ' + error.message, 'error');
-            }
-        }
-
-        // Load login attempts
-        async function loadLoginAttempts() {
-            try {
-                const response = await fetch('/admin/login-attempts?per_page=20');
-                const data = await response.json();
-                
-                let html = '<table class="admin-table"><tr><th>Time</th><th>IP Address</th><th>Username</th><th>Status</th><th>Device Fingerprint</th></tr>';
-                
-                data.attempts.forEach(attempt => {
-                    const statusClass = attempt.success ? 'status-success' : 'status-failed';
-                    const statusText = attempt.success ? 'SUCCESS' : 'FAILED';
-                    html += `<tr>
-                        <td><span class="timestamp">${new Date(attempt.timestamp).toLocaleString()}</span></td>
-                        <td><span class="ip-address">${attempt.ip_address}</span></td>
-                        <td>${attempt.username_attempted || 'N/A'}</td>
-                        <td class="${statusClass}">${statusText}</td>
-                        <td class="fingerprint">${attempt.device_fingerprint || 'N/A'}</td>
-                    </tr>`;
-                });
-                
-                html += '</table>';
-                html += `<p>Showing ${data.attempts.length} recent attempts (Page ${data.current_page} of ${data.pages})</p>`;
-                
-                document.getElementById('attemptsContainer').innerHTML = html;
-            } catch (error) {
-                showAlert('Error loading login attempts: ' + error.message, 'error');
-            }
-        }
-
-        // Load data on page load
-        window.addEventListener('load', () => {
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert(result.message);
+            e.target.reset();
             loadBans();
-            loadLoginAttempts();
+        } else {
+            showAlert(result.error, 'error');
+        }
+    } catch (error) {
+        showAlert('Error banning IP: ' + error.message, 'error');
+    }
+});
+
+// Ban Device Form
+document.getElementById('banDeviceForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = {
+        device_fingerprint: formData.get('deviceFingerprint'),
+        reason: formData.get('deviceReason'),
+        duration_hours: formData.get('deviceDuration') || null
+    };
+
+    try {
+        const response = await fetch('/admin/ban-device', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
         });
-    </script>
-</body>
-</html>
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert(result.message);
+            e.target.reset();
+            loadBans();
+        } else {
+            showAlert(result.error, 'error');
+        }
+    } catch (error) {
+        showAlert('Error banning device: ' + error.message, 'error');
+    }
+});
+
+// Unban IP Form
+document.getElementById('unbanIpForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = {
+        ip_address: formData.get('unbanIpAddress')
+    };
+
+    try {
+        const response = await fetch('/admin/unban-ip', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert(result.message);
+            e.target.reset();
+            loadBans();
+        } else {
+            showAlert(result.error, 'error');
+        }
+    } catch (error) {
+        showAlert('Error unbanning IP: ' + error.message, 'error');
+    }
+});
+
+// Unban Device Form
+document.getElementById('unbanDeviceForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = {
+        device_fingerprint: formData.get('unbanDeviceFingerprint')
+    };
+
+    try {
+        const response = await fetch('/admin/unban-device', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert(result.message);
+            e.target.reset();
+            loadBans();
+        } else {
+            showAlert(result.error, 'error');
+        }
+    } catch (error) {
+        showAlert('Error unbanning device: ' + error.message, 'error');
+    }
+});
+
+// Load bans with improved styling
+async function loadBans() {
+    try {
+        const response = await fetch('/admin/bans');
+        const data = await response.json();
+        
+        let html = '';
+        
+        // IP Bans Section
+        html += '<div class="bans-section">';
+        html += '<h3><i class="fas fa-globe"></i> IP Address Bans</h3>';
+        if (data.ip_bans.length > 0) {
+            html += '<div class="table-container">';
+            html += '<table class="admin-table">';
+            html += '<thead><tr><th>IP Address</th><th>Reason</th><th>Banned At</th><th>Expires At</th></tr></thead>';
+            html += '<tbody>';
+            data.ip_bans.forEach(ban => {
+                const expiresText = ban.expires_at ? new Date(ban.expires_at).toLocaleString() : '<span style="color: var(--primary-color); font-weight: 600;">Permanent</span>';
+                html += `<tr>
+                    <td><span class="ip-address">${ban.ip_address}</span></td>
+                    <td>${ban.reason}</td>
+                    <td><span class="timestamp">${new Date(ban.banned_at).toLocaleString()}</span></td>
+                    <td><span class="timestamp">${expiresText}</span></td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            html += '</div>';
+        } else {
+            html += '<div class="empty-state">';
+            html += '<div class="empty-state-icon"><i class="fas fa-globe"></i></div>';
+            html += '<h3>No IP Bans Active</h3>';
+            html += '<p>No IP addresses are currently banned from the system.</p>';
+            html += '</div>';
+        }
+        html += '</div>';
+
+        // Device Bans Section
+        html += '<div class="bans-section">';
+        html += '<h3><i class="fas fa-desktop"></i> Device Bans</h3>';
+        if (data.device_bans.length > 0) {
+            html += '<div class="table-container">';
+            html += '<table class="admin-table">';
+            html += '<thead><tr><th>Device Fingerprint</th><th>Reason</th><th>Banned At</th><th>Expires At</th></tr></thead>';
+            html += '<tbody>';
+            data.device_bans.forEach(ban => {
+                const expiresText = ban.expires_at ? new Date(ban.expires_at).toLocaleString() : '<span style="color: var(--primary-color); font-weight: 600;">Permanent</span>';
+                html += `<tr>
+                    <td><span class="fingerprint">${ban.device_fingerprint}</span></td>
+                    <td>${ban.reason}</td>
+                    <td><span class="timestamp">${new Date(ban.banned_at).toLocaleString()}</span></td>
+                    <td><span class="timestamp">${expiresText}</span></td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            html += '</div>';
+        } else {
+            html += '<div class="empty-state">';
+            html += '<div class="empty-state-icon"><i class="fas fa-desktop"></i></div>';
+            html += '<h3>No Device Bans Active</h3>';
+            html += '<p>No devices are currently banned from the system.</p>';
+            html += '</div>';
+        }
+        html += '</div>';
+
+        document.getElementById('bansContainer').innerHTML = html;
+    } catch (error) {
+        showAlert('Error loading bans: ' + error.message, 'error');
+        document.getElementById('bansContainer').innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <h3>Failed to Load Bans</h3>
+                <p>There was an error loading the ban data. Please try again.</p>
+            </div>
+        `;
+    }
+}
+
+// Load login attempts with improved styling
+async function loadLoginAttempts() {
+    try {
+        const response = await fetch('/admin/login-attempts?per_page=20');
+        const data = await response.json();
+        
+        let html = '';
+        
+        if (data.attempts.length > 0) {
+            html += '<div class="table-container">';
+            html += '<table class="admin-table">';
+            html += '<thead><tr><th>Time</th><th>IP Address</th><th>Username</th><th>Status</th><th>Device Fingerprint</th></tr></thead>';
+            html += '<tbody>';
+            
+            data.attempts.forEach(attempt => {
+                const statusClass = attempt.success ? 'status-success' : 'status-failed';
+                const statusText = attempt.success ? '✓ SUCCESS' : '✗ FAILED';
+                const statusIcon = attempt.success ? 'fas fa-check-circle' : 'fas fa-times-circle';
+                html += `<tr>
+                    <td><span class="timestamp">${new Date(attempt.timestamp).toLocaleString()}</span></td>
+                    <td><span class="ip-address">${attempt.ip_address}</span></td>
+                    <td>${attempt.username_attempted || '<em>N/A</em>'}</td>
+                    <td class="${statusClass}"><i class="${statusIcon}"></i> ${statusText}</td>
+                    <td><span class="fingerprint">${attempt.device_fingerprint || '<em>N/A</em>'}</span></td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table>';
+            html += '</div>';
+            html += `<div class="table-footer">
+                <p><strong>${data.attempts.length}</strong> recent attempts shown (Page <strong>${data.current_page}</strong> of <strong>${data.pages}</strong>)</p>
+            </div>`;
+        } else {
+            html += '<div class="empty-state">';
+            html += '<div class="empty-state-icon"><i class="fas fa-history"></i></div>';
+            html += '<h3>No Recent Login Attempts</h3>';
+            html += '<p>No login attempts have been recorded recently.</p>';
+            html += '</div>';
+        }
+        
+        document.getElementById('attemptsContainer').innerHTML = html;
+    } catch (error) {
+        showAlert('Error loading login attempts: ' + error.message, 'error');
+        document.getElementById('attemptsContainer').innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <h3>Failed to Load Login Attempts</h3>
+                <p>There was an error loading the login attempt data. Please try again.</p>
+            </div>
+        `;
+    }
+}
+
+// Auto-refresh functionality
+function startAutoRefresh() {
+    if (refreshInterval) clearInterval(refreshInterval);
+    refreshInterval = setInterval(() => {
+        loadBans();
+        loadLoginAttempts();
+    }, 30000); // Refresh every 30 seconds
+}
+
+function stopAutoRefresh() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+        refreshInterval = null;
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadBans();
+    loadLoginAttempts();
+    startAutoRefresh();
+});
+
+// Clean up on page unload
+window.addEventListener('beforeunload', stopAutoRefresh);
+
+// Add some additional styling for bans sections
+const additionalStyles = `
+<style>
+.bans-section {
+    margin-bottom: 32px;
+}
+
+.bans-section:last-child {
+    margin-bottom: 0;
+}
+
+.bans-section h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.bans-section h3 i {
+    color: var(--primary-color);
+}
+
+.table-container {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.table-footer {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: var(--bg-color);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    text-align: center;
+}
+
+.table-footer p {
+    margin: 0;
+    color: var(--secondary-color);
+    font-size: 14px;
+}
+
+.table-footer strong {
+    color: var(--primary-color);
+}
+</style>
+`;
+
+document.head.insertAdjacentHTML('beforeend', additionalStyles);
+</script>
+{% endblock %}

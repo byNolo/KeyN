@@ -1,59 +1,977 @@
 {% extends "base.html" %}
 
-{% block title %}My Active Sessions - KeyN{% endblock %}
+{% block title %}Active Sessions - KeyN{% endblock %}
+
+{% block containerType %}
+<div class="sessions-container">
+{% endblock %}
 
 {% block content %}
-<div class="container">
-  <div class="header">
-    <img src="{{ url_for('static', filename='logos/light-mode-keyn-logo.svg') }}" 
-         alt="KeyN Logo" class="logo logo-light">
-    <img src="{{ url_for('static', filename='logos/dark-mode-keyn-logo.svg') }}" 
-         alt="KeyN Logo" class="logo logo-dark">
-    <h2>Active Sessions</h2>
-  </div>
-
-  {% if sessions %}
-    <table class="sessions-table">
-      <thead>
-        <tr>
-          <th>Issued</th>
-          <th>Expires</th>
-          <th>IP Address</th>
-          <th>Device</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for session in sessions %}
-          <tr>
-            <td>
-              <span class="timestamp">{{ session.issued_at }}</span>
-            </td>
-            <td>
-              <span class="timestamp">{{ session.expires_at }}</span>
-            </td>
-            <td>
-              <span class="ip-address">{{ session.ip_address }}</span>
-            </td>
-            <td>
-              <span class="device-info">{{ session.user_agent }}</span>
-            </td>
-            <td>
-              <form method="POST" action="{{ url_for('auth.revoke_session_ui', session_id=session.id) }}">
-                <button type="submit" class="revoke-btn">Revoke</button>
-              </form>
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% else %}
-    <div class="empty-state">
-      <div class="empty-state-icon">🔐</div>
-      <p>No active sessions found.</p>
+<div class="sessions-wrapper">
+    <!-- Logo Section -->
+    <div class="sessions-logo-section">
+        <img src="{{ url_for('static', filename='logos/light mode KeyN logo Transparent BG.svg') }}" 
+             alt="KeyN Logo" class="logo logo-light">
+        <img src="{{ url_for('static', filename='logos/dark mode KeyN logo Transparent BG.svg') }}" 
+             alt="KeyN Logo" class="logo logo-dark">
     </div>
-  {% endif %}
 
-  <a href="/" class="back-link">← Back to Dashboard</a>
+    <div class="sessions-card">
+        <!-- Header -->
+        <div class="sessions-header">
+            <div class="sessions-shield-icon">
+                <i class="fas fa-desktop"></i>
+            </div>
+            <h1>Active Sessions</h1>
+            <p class="sessions-subtitle">Manage devices connected to your KeyN account</p>
+        </div>
+
+        <!-- Description -->
+        <div class="sessions-description">
+            <div class="description-content">
+                <i class="fas fa-info-circle"></i>
+                <p>These are all the devices and browsers currently signed in to your KeyN account. You can revoke access for any session you don't recognize.</p>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="sessions-main-content">
+            {% if sessions %}
+                <div class="sessions-grid">
+                    {% for session in sessions %}
+                        <div class="session-card" data-session-id="{{ session.id }}">
+                            <div class="session-header">
+                                <div class="session-icon">
+                                    <i class="session-device-icon" data-user-agent="{{ session.user_agent }}"></i>
+                                </div>
+                                <div class="session-info">
+                                    <h3 class="session-device" data-user-agent="{{ session.user_agent }}"></h3>
+                                    <p class="session-browser" data-user-agent="{{ session.user_agent }}"></p>
+                                </div>
+                                <div class="session-status">
+                                    {% if session.is_current %}
+                                        <span class="current-badge">
+                                            <i class="fas fa-circle"></i>
+                                            Current
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="session-details">
+                                <div class="detail-item">
+                                    <i class="fas fa-globe"></i>
+                                    <span class="detail-label">IP Address:</span>
+                                    <span class="detail-value ip-address">{{ session.ip_address }}</span>
+                                </div>
+                                
+                                <div class="detail-item">
+                                    <i class="fas fa-calendar"></i>
+                                    <span class="detail-label">Started:</span>
+                                    <span class="detail-value timestamp" data-timestamp="{{ session.issued_at }}"></span>
+                                </div>
+                                
+                                <div class="detail-item">
+                                    <i class="fas fa-clock"></i>
+                                    <span class="detail-label">Expires:</span>
+                                    <span class="detail-value timestamp" data-timestamp="{{ session.expires_at }}"></span>
+                                </div>
+
+                                {% if session.last_activity %}
+                                <div class="detail-item">
+                                    <i class="fas fa-history"></i>
+                                    <span class="detail-label">Last Activity:</span>
+                                    <span class="detail-value timestamp" data-timestamp="{{ session.last_activity }}"></span>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            {% if not session.is_current %}
+                            <div class="session-actions">
+                                <form method="POST" action="{{ url_for('auth.revoke_session_ui', session_id=session.id) }}" class="revoke-form">
+                                    <button type="button" class="revoke-btn" onclick="showRevokeModal('{{ session.id }}', this.closest('.session-card').querySelector('.session-device').textContent)">
+                                        <i class="fas fa-sign-out-alt"></i>
+                                        <span>Sign Out</span>
+                                    </button>
+                                </form>
+                            </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-desktop"></i>
+                    </div>
+                    <h2>No Active Sessions</h2>
+                    <p>You don't have any active sessions. This shouldn't happen since you're currently signed in!</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Footer -->
+        <div class="sessions-footer">
+            <div class="footer-actions">
+                <a href="/" class="back-link">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back to Dashboard</span>
+                </a>
+            </div>
+            <p>Powered by <strong>KeyN</strong> Authentication</p>
+        </div>
+    </div>
 </div>
+
+<!-- Revoke Session Modal -->
+<div class="revoke-modal-overlay" id="revokeSessionModal">
+    <div class="revoke-modal">
+        <div class="modal-header">
+            <div class="modal-icon">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <h3>Sign Out Device</h3>
+            <button type="button" class="modal-close" onclick="hideRevokeModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to sign out <strong id="revoke-device-name"></strong>?</p>
+                        <p class="modal-warning">
+                This will immediately end the session on that device. You'll need to sign in again to access your account from that device.
+            </p>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="hideRevokeModal()">Cancel</button>
+            <button type="button" class="btn-revoke" id="confirm-revoke">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Sign Out Device</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Sessions Page Styles */
+.sessions-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 20px;
+  background: var(--bg-color);
+}
+
+.sessions-wrapper {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.sessions-logo-section {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.sessions-logo-section .logo {
+  width: 120px;
+  height: auto;
+  transition: transform 0.3s ease;
+}
+
+.sessions-logo-section .logo:hover {
+  transform: scale(1.05);
+}
+
+.sessions-card {
+  background: var(--card-bg);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+[data-theme="dark"] .sessions-card {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Header Section */
+.sessions-header {
+  padding: 32px 32px 24px;
+  text-align: center;
+  background: linear-gradient(135deg, var(--card-bg) 0%, var(--bg-color) 100%);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sessions-shield-icon {
+  width: 60px;
+  height: 60px;
+  background: var(--primary-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  color: white;
+  font-size: 24px;
+  box-shadow: 0 4px 12px rgba(21, 115, 71, 0.3);
+}
+
+[data-theme="dark"] .sessions-shield-icon {
+  box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
+}
+
+.sessions-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0 0 8px;
+}
+
+.sessions-subtitle {
+  color: var(--secondary-color);
+  font-size: 16px;
+  margin: 0;
+  font-weight: 400;
+}
+
+/* Description Section */
+.sessions-description {
+  padding: 20px 32px;
+  background: rgba(59, 130, 246, 0.08);
+  border-bottom: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .sessions-description {
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.description-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: var(--text-color);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.description-content i {
+  color: #3b82f6;
+  font-size: 18px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.description-content p {
+  margin: 0;
+}
+
+/* Main Content */
+.sessions-main-content {
+  padding: 32px;
+  min-height: 300px;
+}
+
+/* Sessions Grid */
+.sessions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 24px;
+}
+
+.session-card {
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 24px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.session-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .session-card:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Session Header */
+.session-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.session-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.session-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.session-device {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0 0 4px;
+}
+
+.session-browser {
+  font-size: 14px;
+  color: var(--secondary-color);
+  margin: 0;
+}
+
+.session-status {
+  flex-shrink: 0;
+}
+
+.current-badge {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--success-color);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.current-badge i {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+/* Session Details */
+.session-details {
+  margin-bottom: 20px;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.detail-item:last-child {
+  margin-bottom: 0;
+}
+
+.detail-item i {
+  width: 16px;
+  color: var(--primary-color);
+  flex-shrink: 0;
+}
+
+.detail-label {
+  color: var(--secondary-color);
+  min-width: 80px;
+}
+
+.detail-value {
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+.ip-address {
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+  background: var(--card-bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+/* Session Actions */
+.session-actions {
+  border-top: 1px solid var(--border-color);
+  padding-top: 16px;
+}
+
+.revoke-btn {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  justify-content: center;
+}
+
+.revoke-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--secondary-color);
+}
+
+.empty-state-icon {
+  font-size: 64px;
+  margin-bottom: 24px;
+  color: var(--border-color);
+}
+
+.empty-state h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0 0 12px;
+}
+
+.empty-state p {
+  font-size: 16px;
+  margin: 0;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Footer */
+.sessions-footer {
+  padding: 24px 32px;
+  background: var(--bg-color);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-actions {
+  flex: 1;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: rgba(21, 115, 71, 0.1);
+  border: 1px solid rgba(21, 115, 71, 0.2);
+  transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .back-link {
+  background: rgba(52, 211, 153, 0.1);
+  border-color: rgba(52, 211, 153, 0.2);
+}
+
+.back-link:hover {
+  background: rgba(21, 115, 71, 0.15);
+  border-color: rgba(21, 115, 71, 0.3);
+  transform: translateY(-1px);
+}
+
+[data-theme="dark"] .back-link:hover {
+  background: rgba(52, 211, 153, 0.15);
+  border-color: rgba(52, 211, 153, 0.3);
+}
+
+.sessions-footer p {
+  color: var(--secondary-color);
+  font-size: 14px;
+  margin: 0;
+}
+
+.sessions-footer strong {
+  color: var(--primary-color);
+}
+
+/* Modal Styles */
+.revoke-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.revoke-modal-overlay.show {
+  display: flex;
+}
+
+.revoke-modal {
+  background: var(--card-bg);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-width: 480px;
+  overflow: hidden;
+  animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-header {
+  padding: 24px 24px 16px;
+  text-align: center;
+  position: relative;
+}
+
+.modal-icon {
+  width: 50px;
+  height: 50px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  font-size: 20px;
+}
+
+.modal-header h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0;
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: var(--secondary-color);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+  background: var(--bg-color);
+  color: var(--text-color);
+}
+
+.modal-body {
+  padding: 0 24px 24px;
+  text-align: center;
+}
+
+.modal-body p {
+  margin: 0 0 16px;
+  font-size: 16px;
+  color: var(--text-color);
+}
+
+.modal-warning {
+  font-size: 14px !important;
+  color: var(--secondary-color) !important;
+  margin: 0 !important;
+}
+
+.modal-actions {
+  padding: 20px 24px 24px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.btn-cancel,
+.btn-revoke {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-cancel {
+  background: var(--bg-color);
+  color: var(--secondary-color);
+  border: 2px solid var(--border-color);
+}
+
+.btn-cancel:hover {
+  background: var(--card-bg);
+  color: var(--text-color);
+  border-color: var(--secondary-color);
+}
+
+.btn-revoke {
+  background: #ef4444;
+  color: white;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.btn-revoke:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+/* Mobile Responsive Design */
+@media (max-width: 768px) {
+  .sessions-container {
+    padding: 16px;
+  }
+
+  .sessions-logo-section {
+    margin-bottom: 24px;
+  }
+
+  .sessions-logo-section .logo {
+    width: 100px;
+  }
+
+  .sessions-card {
+    border-radius: 12px;
+  }
+
+  .sessions-header {
+    padding: 24px 24px 20px;
+  }
+
+  .sessions-shield-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+
+  .sessions-header h1 {
+    font-size: 24px;
+  }
+
+  .sessions-subtitle {
+    font-size: 14px;
+  }
+
+  .sessions-description {
+    padding: 16px 24px;
+  }
+
+  .description-content {
+    font-size: 14px;
+    gap: 10px;
+  }
+
+  .sessions-main-content {
+    padding: 24px;
+  }
+
+  .sessions-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .session-card {
+    padding: 20px;
+  }
+
+  .session-header {
+    gap: 12px;
+  }
+
+  .session-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+
+  .sessions-footer {
+    padding: 20px 24px;
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .footer-actions {
+    width: 100%;
+  }
+
+  .revoke-modal {
+    width: 95%;
+    margin: 20px;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+  }
+
+  .btn-cancel,
+  .btn-revoke {
+    justify-content: center;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 480px) {
+  .sessions-main-content,
+  .sessions-description {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .sessions-footer {
+    padding: 16px 20px;
+  }
+
+  .session-card {
+    padding: 16px;
+  }
+
+  .sessions-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .sessions-card,
+  .session-card,
+  .revoke-btn,
+  .back-link,
+  .btn-cancel,
+  .btn-revoke {
+    transition: none;
+  }
+
+  .sessions-logo-section .logo:hover,
+  .session-card:hover {
+    transform: none;
+  }
+
+  .current-badge i {
+    animation: none;
+  }
+
+  .revoke-modal {
+    animation: none;
+  }
+}
+</style>
+
+<script>
+// User Agent Parser
+function parseUserAgent(userAgent) {
+    const result = {
+        device: 'Unknown Device',
+        browser: 'Unknown Browser',
+        icon: 'fas fa-desktop'
+    };
+
+    // Mobile/Tablet Detection
+    const isMobile = /Mobile|Android|iPhone|iPad|iPod|BlackBerry|Windows Phone/i.test(userAgent);
+    const isTablet = /iPad|Android(?!.*Mobile)|Tablet/i.test(userAgent);
+    
+    // Operating System Detection
+    let os = 'Unknown OS';
+    if (/Windows NT 10.0/i.test(userAgent)) os = 'Windows 10/11';
+    else if (/Windows NT 6.3/i.test(userAgent)) os = 'Windows 8.1';
+    else if (/Windows NT 6.2/i.test(userAgent)) os = 'Windows 8';
+    else if (/Windows NT 6.1/i.test(userAgent)) os = 'Windows 7';
+    else if (/Windows/i.test(userAgent)) os = 'Windows';
+    else if (/Mac OS X/i.test(userAgent)) os = 'macOS';
+    else if (/Linux/i.test(userAgent)) os = 'Linux';
+    else if (/Android/i.test(userAgent)) os = 'Android';
+    else if (/iOS|iPhone|iPad|iPod/i.test(userAgent)) os = 'iOS';
+
+    // Browser Detection
+    let browser = 'Unknown Browser';
+    let version = '';
+    
+    if (/OPR\/(\d+)/i.test(userAgent)) {
+        browser = 'Opera';
+        version = userAgent.match(/OPR\/(\d+)/i)?.[1] || '';
+    } else if (/Edg\/(\d+)/i.test(userAgent)) {
+        browser = 'Microsoft Edge';
+        version = userAgent.match(/Edg\/(\d+)/i)?.[1] || '';
+    } else if (/Chrome\/(\d+)/i.test(userAgent)) {
+        browser = 'Google Chrome';
+        version = userAgent.match(/Chrome\/(\d+)/i)?.[1] || '';
+    } else if (/Firefox\/(\d+)/i.test(userAgent)) {
+        browser = 'Mozilla Firefox';
+        version = userAgent.match(/Firefox\/(\d+)/i)?.[1] || '';
+    } else if (/Safari\/(\d+)/i.test(userAgent) && !/Chrome/i.test(userAgent)) {
+        browser = 'Safari';
+        // Safari version is tricky, use WebKit version as approximation
+        const match = userAgent.match(/Version\/(\d+\.\d+)/i);
+        version = match?.[1] || '';
+    }
+
+    // Device Type and Icon
+    if (isTablet) {
+        result.device = `${os} Tablet`;
+        result.icon = 'fas fa-tablet-alt';
+    } else if (isMobile) {
+        result.device = `${os} Phone`;
+        result.icon = 'fas fa-mobile-alt';
+    } else {
+        result.device = `${os} Computer`;
+        result.icon = 'fas fa-desktop';
+    }
+
+    // Browser with version
+    result.browser = version ? `${browser} ${version}` : browser;
+
+    return result;
+}
+
+// Format timestamp to relative time
+function formatTimestamp(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    
+    return date.toLocaleDateString();
+}
+
+// Initialize user agent parsing and timestamps
+function initializeSessions() {
+    // Parse user agents
+    document.querySelectorAll('[data-user-agent]').forEach(element => {
+        const userAgent = element.getAttribute('data-user-agent');
+        const parsed = parseUserAgent(userAgent);
+        
+        if (element.classList.contains('session-device-icon')) {
+            element.className = `session-device-icon ${parsed.icon}`;
+        } else if (element.classList.contains('session-device')) {
+            element.textContent = parsed.device;
+        } else if (element.classList.contains('session-browser')) {
+            element.textContent = parsed.browser;
+        }
+    });
+
+    // Format timestamps
+    document.querySelectorAll('[data-timestamp]').forEach(element => {
+        const timestamp = element.getAttribute('data-timestamp');
+        element.textContent = formatTimestamp(timestamp);
+        
+        // Add tooltip with full date
+        element.title = new Date(timestamp).toLocaleString();
+    });
+}
+
+// Modal functionality
+let currentSessionId = null;
+let currentForm = null;
+
+function showRevokeModal(sessionId, deviceName) {
+    currentSessionId = sessionId;
+    currentForm = document.querySelector(`[data-session-id="${sessionId}"] .revoke-form`);
+    
+    document.getElementById('revoke-device-name').textContent = deviceName;
+    document.getElementById('revokeSessionModal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+function hideRevokeModal() {
+    document.getElementById('revokeSessionModal').classList.remove('show');
+    document.body.style.overflow = '';
+    currentSessionId = null;
+    currentForm = null;
+}
+
+function revokeSession() {
+    if (currentForm) {
+        currentForm.submit();
+    }
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    initializeSessions();
+    
+    // Modal event listeners
+    document.getElementById('confirm-revoke').addEventListener('click', revokeSession);
+    
+    // Close modal on overlay click
+    document.getElementById('revokeSessionModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            hideRevokeModal();
+        }
+    });
+    
+    // Close modal on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('revokeSessionModal').classList.contains('show')) {
+            hideRevokeModal();
+        }
+    });
+});
+
+// Update timestamps every minute
+setInterval(() => {
+    document.querySelectorAll('[data-timestamp]').forEach(element => {
+        const timestamp = element.getAttribute('data-timestamp');
+        element.textContent = formatTimestamp(timestamp);
+    });
+}, 60000);
+</script>
+
 {% endblock %}

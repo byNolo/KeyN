@@ -88,14 +88,37 @@ body {
 }
 
 /* Common Layout Styles */
-.container {
-  max-width: 400px;
+.container,
+.container-sm,
+.container-md,
+.container-lg,
+.container-xl {
   margin: 0 auto;
   padding: 20px;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.container {
+  max-width: 400px;
+}
+
+.container-sm {
+  max-width: 320px;
+}
+
+.container-md {
+  max-width: 600px;
+}
+
+.container-lg {
+  max-width: 900px;
+}
+
+.container-xl {
+  max-width: 1200px;
 }
 
 .card {
