@@ -189,7 +189,7 @@ A complete demo application is available at `demo_client/oauth_app.py`. To run i
 ## Security Features
 
 - **State parameter** prevents CSRF attacks during authorization flow
-- **Short-lived authorization codes** (10 minutes) minimize exposure window
+- A**Short-lived authorization codes** (10 minutes) minimize exposure window
 - **Scoped access tokens** limit data access to what users explicitly approved
 - **Redirect URI validation** prevents authorization code interception
 - **Client authentication** required for all token exchanges
