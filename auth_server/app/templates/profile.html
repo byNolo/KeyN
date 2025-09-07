@@ -50,6 +50,21 @@
         </div>
     </div>
 
+    {% if user.passkeys|length == 0 %}
+    <div class="profile-card passkey-cta" id="passkey-quick-setup">
+        <div class="card-header">
+            <div class="card-icon"><i class="fas fa-fingerprint"></i></div>
+            <h2>Add a Passkey (Optional)</h2>
+        </div>
+        <div class="card-content">
+            <p class="small">Secure passwordless sign‑in with a passkey. Add one now, or later from Edit Profile.</p>
+            <div id="passkey-quick-status" class="small muted" style="min-height:18px;"></div>
+            <button type="button" class="btn btn-primary" id="quick-passkey-btn">Add Passkey</button>
+            <button type="button" class="btn btn-secondary" id="quick-passkey-skip" style="margin-left:8px;">Dismiss</button>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Profile Details Cards -->
     <div class="profile-content">
         <!-- Basic Information -->
@@ -195,6 +210,70 @@
         </div>
     </div>
 </div>
+
+{% block scripts %}
+{{ super() }}
+<script>
+(function(){
+    const wrap = document.getElementById('passkey-quick-setup');
+    if(!wrap) return;
+    if(!('credentials' in navigator) || !window.PublicKeyCredential){
+        wrap.style.display='none';
+        return;
+    }
+    const addBtn = document.getElementById('quick-passkey-btn');
+    const skipBtn = document.getElementById('quick-passkey-skip');
+    const statusEl = document.getElementById('passkey-quick-status');
+    function b64urlToArrayBuffer(b64url){
+        const pad='='.repeat((4 - b64url.length % 4) % 4);
+        const str=(b64url+pad).replace(/-/g,'+').replace(/_/g,'/');
+        const bytes=Uint8Array.from(atob(str), c=>c.charCodeAt(0));
+        return bytes.buffer;
+    }
+    function arrayBufferToB64url(buf){
+        const bytes=new Uint8Array(buf); let s='';
+        for(const b of bytes) s+=String.fromCharCode(b);
+        return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    }
+    async function addPasskey(){
+        statusEl.textContent='Requesting options...';
+        try {
+            const optResp = await fetch('/api/passkeys/options/register',{method:'POST', headers:{'Content-Type':'application/json'}});
+            const opts = await optResp.json();
+            if(!optResp.ok) throw new Error(opts.error || 'Failed to get options');
+            const pub = opts.publicKey;
+            pub.challenge = b64urlToArrayBuffer(pub.challenge);
+            pub.user.id = b64urlToArrayBuffer(pub.user.id);
+            if(Array.isArray(pub.excludeCredentials)){
+                pub.excludeCredentials = pub.excludeCredentials.map(c=>({...c, id:b64urlToArrayBuffer(c.id)}));
+            }
+            const cred = await navigator.credentials.create({ publicKey: pub });
+            if(!cred) throw new Error('No credential created');
+            const regData = {
+                id: cred.id,
+                rawId: arrayBufferToB64url(cred.rawId),
+                type: cred.type,
+                response: {
+                    attestationObject: arrayBufferToB64url(cred.response.attestationObject),
+                    clientDataJSON: arrayBufferToB64url(cred.response.clientDataJSON),
+                    transports: cred.response.getTransports ? cred.response.getTransports() : []
+                }
+            };
+            statusEl.textContent='Verifying...';
+            const verify = await fetch('/api/passkeys/register',{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(regData)});
+            const verifyJson = await verify.json();
+            if(!verify.ok || !verifyJson.success) throw new Error(verifyJson.error || 'Registration failed');
+            statusEl.textContent='Passkey added! Reloading...';
+            setTimeout(()=>window.location.reload(), 1200);
+        } catch(e){
+            console.error(e); statusEl.textContent='Failed: '+e.message;
+        }
+    }
+    addBtn.addEventListener('click', addPasskey);
+    skipBtn.addEventListener('click', ()=>{ wrap.style.display='none'; });
+})();
+</script>
+{% endblock %}
 
 <style>
 /* Profile Page Styles */

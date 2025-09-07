@@ -29,6 +29,15 @@
       <a href="{{ url_for('auth.login') }}" class="btn-primary">Go to Login</a>
     {% endif %}
   </div>
+  <div class="passkey-inline-card" id="passkey-setup" data-visible="true">
+    <h3><i class="fas fa-fingerprint"></i> Add a Passkey (Optional)</h3>
+    <p class="small">Add a passwordless credential now for faster, phishing-resistant sign-ins. You can also do this later from your profile.</p>
+    <div id="passkey-inline-status" class="offer-status" aria-live="polite"></div>
+    <div class="offer-actions">
+      <button type="button" class="btn-primary" id="inline-start-passkey-btn">Add Passkey</button>
+      <button type="button" class="btn-secondary" id="inline-skip-passkey-btn">Skip</button>
+    </div>
+  </div>
 </div>
 <style>
 .status-card.verified {
@@ -83,4 +92,66 @@
   color: #fff;
 }
 </style>
+<script>
+(function(){
+  const container = document.getElementById('passkey-setup');
+  if(!container) return;
+  if(!('credentials' in navigator) || !window.PublicKeyCredential){
+    container.style.display='none';
+    return;
+  }
+  const statusEl = document.getElementById('passkey-inline-status');
+  const startBtn = document.getElementById('inline-start-passkey-btn');
+  const skipBtn = document.getElementById('inline-skip-passkey-btn');
+  function b64urlToArrayBuffer(b64url){
+    const pad='='.repeat((4 - b64url.length % 4) % 4);
+    const str=(b64url+pad).replace(/-/g,'+').replace(/_/g,'/');
+    const bytes=Uint8Array.from(atob(str), c=>c.charCodeAt(0));
+    return bytes.buffer;
+  }
+  function arrayBufferToB64url(buf){
+    const bytes=new Uint8Array(buf); let str='';
+    for(const b of bytes) str+=String.fromCharCode(b);
+    return btoa(str).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  }
+  skipBtn.addEventListener('click', ()=>{ container.style.display='none'; });
+  startBtn.addEventListener('click', async ()=>{
+    statusEl.textContent='Generating passkey options...';
+    try {
+      const optResp = await fetch('/api/passkeys/options/register',{method:'POST', headers:{'Content-Type':'application/json'}});
+      const opts = await optResp.json();
+      if(!optResp.ok) throw new Error(opts.error || 'Failed to get options');
+      const pub = opts.publicKey;
+      pub.challenge = b64urlToArrayBuffer(pub.challenge);
+      pub.user.id = b64urlToArrayBuffer(pub.user.id);
+      if(Array.isArray(pub.excludeCredentials)){
+        pub.excludeCredentials = pub.excludeCredentials.map(c=>({...c, id:b64urlToArrayBuffer(c.id)}));
+      }
+      const cred = await navigator.credentials.create({ publicKey: pub });
+      if(!cred) throw new Error('No credential created');
+      const regData = {
+        id: cred.id,
+        rawId: arrayBufferToB64url(cred.rawId),
+        type: cred.type,
+        response: {
+          attestationObject: arrayBufferToB64url(cred.response.attestationObject),
+          clientDataJSON: arrayBufferToB64url(cred.response.clientDataJSON),
+          transports: cred.response.getTransports ? cred.response.getTransports() : []
+        }
+      };
+      statusEl.textContent='Verifying passkey...';
+      const verify = await fetch('/api/passkeys/register',{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(regData)});
+      const verifyJson = await verify.json();
+      if(!verify.ok || !verifyJson.success){
+        throw new Error(verifyJson.error || 'Registration failed');
+      }
+      statusEl.textContent='Passkey added!';
+      setTimeout(()=>{ container.style.display='none'; }, 1500);
+    } catch(e){
+      console.error(e);
+      statusEl.textContent='Passkey setup failed: '+e.message;
+    }
+  });
+})();
+</script>
 {% endblock %}
