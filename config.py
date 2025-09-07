@@ -37,3 +37,6 @@ class Config:
     
     # CORS configuration for client apps
     ALLOWED_ORIGINS = os.environ.get("FLASK_ALLOWED_ORIGINS", "").split(",") if os.environ.get("FLASK_ALLOWED_ORIGINS") else []
+
+    # Passkey / WebAuthn debug (exposes detailed errors if True)
+    PASSKEY_DEBUG = os.environ.get("PASSKEY_DEBUG", "False") == "True"

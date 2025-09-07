@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, jsonify, current_app, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
-from .models import User, RefreshToken, ClientApplication, DataScope, UserAuthorization
+from .models import User, RefreshToken, ClientApplication, DataScope, UserAuthorization, PasskeyCredential
 from .forms import LoginForm, RegisterForm, ForgotPasswordForm, ForgotUsernameForm, ProfileForm, ChangePasswordForm, ProfileCompletionForm
 from flask_wtf import FlaskForm
 from wtforms import PasswordField, SubmitField
@@ -18,6 +18,15 @@ import datetime
 import secrets
 import os
 import json
+from .passkey_utils import (
+    start_registration as pk_start_registration,
+    finish_registration as pk_finish_registration,
+    start_authentication as pk_start_authentication,
+    finish_authentication as pk_finish_authentication,
+    b64url_encode,
+    serialize_registration_options,
+    serialize_authentication_options
+)
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -902,6 +911,23 @@ def revoke_authorization(client_id):
     else:
         return jsonify({"error": "Authorization not found"}), 404
 
+@auth_bp.route('/api/user/passkeys', methods=['GET'])
+@login_required
+def list_user_passkeys():
+    return jsonify([p.to_dict() for p in current_user.passkeys])
+
+@auth_bp.route('/api/user/passkeys/<int:pk_id>', methods=['DELETE'])
+@login_required
+def delete_user_passkey(pk_id):
+    cred = PasskeyCredential.query.filter_by(id=pk_id, user_id=current_user.id).first()
+    if not cred:
+        return jsonify({'error': 'Not found'}), 404
+    # Prevent deleting last credential if user also has no password? (not implemented here)
+    from .models import db as _db
+    _db.session.delete(cred)
+    _db.session.commit()
+    return jsonify({'success': True})
+
 @auth_bp.route("/authorizations")
 @login_required
 def authorizations_page():
@@ -1108,3 +1134,99 @@ def health_check():
             "timestamp": datetime.datetime.utcnow().isoformat(),
             "error": str(e)
         }), 500
+
+# --------------------
+# Passkey / WebAuthn APIs (placed at end to avoid blueprint order issues)
+# --------------------
+@auth_bp.route('/api/passkeys/options/register', methods=['POST'])
+@login_required
+def passkeys_registration_options():
+    options = pk_start_registration(current_user)
+    # Store both raw and encoded for flexibility
+    session['webauthn_reg_challenge'] = b64url_encode(options.challenge)
+    # Store raw bytes base64 as well for strict comparison
+    session['webauthn_reg_challenge_b64'] = b64url_encode(options.challenge)
+    return jsonify(serialize_registration_options(options))
+
+@auth_bp.route('/api/passkeys/register', methods=['POST'])
+@login_required
+def passkeys_register():
+    data = request.get_json()
+    challenge = session.get('webauthn_reg_challenge_b64') or session.get('webauthn_reg_challenge')
+    if not challenge:
+        return jsonify({'error': 'Missing registration challenge'}), 400
+    try:
+        cred = pk_finish_registration(current_user, data, challenge)
+        session.pop('webauthn_reg_challenge', None)
+        session.pop('webauthn_reg_challenge_b64', None)
+        return jsonify({'success': True, 'credential': cred.to_dict()})
+    except Exception as e:
+        if current_app.config.get('PASSKEY_DEBUG'):
+            return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Passkey registration failed'}), 400
+
+@auth_bp.route('/api/passkeys/options/authenticate', methods=['POST'])
+def passkeys_authentication_options():
+    # Safely parse JSON body (may be empty)
+    data = {}
+    if request.is_json:
+        try:
+            data = request.get_json(silent=True) or {}
+        except Exception:
+            data = {}
+    username = data.get('username') if isinstance(data, dict) else None
+    user = User.query.filter_by(username=username).first() if username else None
+    try:
+        options = pk_start_authentication(user)
+        session['webauthn_auth_challenge'] = b64url_encode(options.challenge)
+        session['webauthn_auth_challenge_b64'] = b64url_encode(options.challenge)
+        if user:
+            session['webauthn_auth_user_id'] = user.id
+        return jsonify(serialize_authentication_options(options))
+    except Exception as e:
+        current_app.logger.exception('Failed generating passkey auth options')
+        if current_app.config.get('PASSKEY_DEBUG'):
+            return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Could not prepare passkey authentication'}), 400
+
+@auth_bp.route('/api/passkeys/debug/challenge', methods=['GET'])
+@login_required
+def passkeys_debug_challenge():
+    """Return current stored WebAuthn challenges (debug only)."""
+    if not current_app.config.get('PASSKEY_DEBUG'):
+        return jsonify({'error': 'Not found'}), 404
+    return jsonify({
+        'reg_challenge_encoded': session.get('webauthn_reg_challenge'),
+        'reg_challenge_raw_len': len(session.get('webauthn_reg_challenge_raw') or '') if session.get('webauthn_reg_challenge_raw') else None,
+        'auth_challenge_encoded': session.get('webauthn_auth_challenge'),
+        'auth_challenge_raw_len': len(session.get('webauthn_auth_challenge_raw') or '') if session.get('webauthn_auth_challenge_raw') else None
+    })
+
+@auth_bp.route('/api/passkeys/authenticate', methods=['POST'])
+def passkeys_authenticate():
+    data = request.get_json()
+    challenge = session.get('webauthn_auth_challenge_b64') or session.get('webauthn_auth_challenge')
+    if not challenge:
+        return jsonify({'error': 'Missing authentication challenge'}), 400
+    try:
+        cred_id = data.get('rawId') or data.get('id')
+        if not cred_id:
+            return jsonify({'error': 'No credential id supplied'}), 400
+        cred_model = PasskeyCredential.query.filter_by(credential_id=cred_id).first()
+        if not cred_model:
+            return jsonify({'error': 'Credential not found'}), 404
+        user = User.query.get(cred_model.user_id)
+        cred_model, err = pk_finish_authentication(data, challenge, user)
+        if err:
+            return jsonify({'error': err}), 400
+        login_user(user, remember=True)
+        session['token'] = generate_access_token(user.id)
+        session['refresh_token'] = generate_refresh_token(user.id)
+        session.permanent = True
+        session.pop('webauthn_auth_challenge', None)
+        session.pop('webauthn_auth_challenge_b64', None)
+        return jsonify({'success': True, 'user': {'id': user.id, 'username': user.username}})
+    except Exception as e:
+        if current_app.config.get('PASSKEY_DEBUG'):
+            return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Passkey authentication failed'}), 400

@@ -169,3 +169,29 @@ class AuthorizationCode(db.Model):
     expires_at = db.Column(db.DateTime, nullable=False)
     used = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+
+
+class PasskeyCredential(db.Model):
+    """Stores a user's WebAuthn / Passkey credential"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    credential_id = db.Column(db.String(255), unique=True, nullable=False)  # base64url encoded
+    public_key = db.Column(db.Text, nullable=False)  # PEM or COSE (we'll store base64url of COSE key bytes)
+    sign_count = db.Column(db.Integer, default=0)
+    transports = db.Column(db.String(255))  # comma-separated transports
+    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    last_used = db.Column(db.DateTime)
+    friendly_name = db.Column(db.String(255))  # Optional user label for the credential
+
+    user = db.relationship('User', backref=db.backref('passkeys', lazy=True, cascade='all, delete-orphan'))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'credential_id': self.credential_id,
+            'sign_count': self.sign_count,
+            'transports': (self.transports.split(',') if self.transports else []),
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'last_used': self.last_used.isoformat() if self.last_used else None,
+            'friendly_name': self.friendly_name or 'Passkey'
+        }

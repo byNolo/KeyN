@@ -35,8 +35,128 @@
   {{ form.submit(class="submit-btn") }}
 </form>
 
+<div class="passkey-divider">
+  <span>or</span>
+</div>
+
+<button id="passkey-login-btn" class="submit-btn alt" type="button">Use Passkey</button>
+<div id="passkey-login-status" class="passkey-status" aria-live="polite"></div>
+
 <div class="link-container">
   <p>Don't have an account? <a href="{{ url_for('auth.register', redirect=request.args.get('redirect')) if request.args.get('redirect') else url_for('auth.register') }}">Sign up here</a></p>
   <p><a href="{{ url_for('auth.forgot_password') }}">Forgot Password?</a> | <a href="{{ url_for('auth.forgot_username') }}">Forgot Username?</a></p>
 </div>
+{% block additional_js %}
+{{ super() }}
+<script>
+// Passkey login script (guarded to avoid duplicate execution)
+(function(){
+  if (window._passkeyLoginInit) return; // prevent duplicate definition
+  window._passkeyLoginInit = true;
+
+  function b64urlToArrayBuffer(b64url){
+    const pad = '='.repeat((4 - b64url.length % 4) % 4);
+    const str = (b64url + pad).replace(/-/g,'+').replace(/_/g,'/');
+    const bytes = Uint8Array.from(atob(str), c=>c.charCodeAt(0));
+    return bytes.buffer;
+  }
+  function arrayBufferToB64url(buf){
+    const bytes = new Uint8Array(buf);
+    let str='';
+    for (const b of bytes) str += String.fromCharCode(b);
+    return btoa(str).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  }
+
+  async function passkeyLogin(){
+    const statusEl = document.getElementById('passkey-login-status');
+    const usernameInput = document.getElementById('username');
+    const usernameVal = usernameInput ? (usernameInput.value || '').trim() : '';
+    statusEl.textContent = 'Preparing passkey request...';
+    try {
+      const body = usernameVal ? JSON.stringify({username: usernameVal}) : JSON.stringify({});
+      const optionsResp = await fetch('/api/passkeys/options/authenticate', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        credentials: 'same-origin',
+        body
+      });
+      let optionsJson = null;
+      try { optionsJson = await optionsResp.json(); } catch(_) {}
+      if(!optionsResp.ok){
+        const msg = (optionsJson && optionsJson.error) ? optionsJson.error : 'Failed to get options';
+        throw new Error(msg);
+      }
+      const options = optionsJson;
+      if(!options || !options.publicKey || !options.publicKey.challenge){
+        throw new Error('Malformed options');
+      }
+      // Decode challenge & allowCredentials
+      options.publicKey.challenge = b64urlToArrayBuffer(options.publicKey.challenge);
+      if (Array.isArray(options.publicKey.allowCredentials)){
+        options.publicKey.allowCredentials = options.publicKey.allowCredentials.map(c => ({
+          ...c,
+          id: b64urlToArrayBuffer(c.id)
+        }));
+      }
+      // Wrap in object as per spec
+      let cred;
+      try {
+        cred = await navigator.credentials.get({ publicKey: options.publicKey });
+      } catch(domErr){
+        console.error('navigator.credentials.get error', domErr);
+        throw new Error(domErr.message || 'Passkey operation was cancelled');
+      }
+      if(!cred){
+        throw new Error('No credential returned');
+      }
+      const data = {
+        id: cred.id,
+        rawId: arrayBufferToB64url(cred.rawId),
+        type: cred.type,
+        response: {
+          authenticatorData: arrayBufferToB64url(cred.response.authenticatorData),
+          clientDataJSON: arrayBufferToB64url(cred.response.clientDataJSON),
+          signature: arrayBufferToB64url(cred.response.signature),
+          userHandle: cred.response.userHandle ? arrayBufferToB64url(cred.response.userHandle) : null
+        }
+      };
+      statusEl.textContent = 'Verifying passkey...';
+      const verifyResp = await fetch('/api/passkeys/authenticate', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        credentials: 'same-origin',
+        body: JSON.stringify(data)
+      });
+      const verifyJson = await verifyResp.json().catch(()=>({}));
+      if(!verifyResp.ok || !verifyJson.success){
+        throw new Error(verifyJson.error || 'Authentication failed');
+      }
+      statusEl.textContent = 'Success! Redirecting...';
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get('redirect');
+      window.location.href = redirect || '/profile';
+    } catch(e){
+      console.error(e);
+      // Friendlier messages for common cases
+      if(e.message === 'No credential returned'){
+        document.getElementById('passkey-login-status').textContent = 'No passkey selected or none available for this site. You can try again or use your password.';
+      } else {
+        document.getElementById('passkey-login-status').textContent = 'Passkey login failed: ' + e.message;
+      }
+    }
+  }
+
+  const btn = document.getElementById('passkey-login-btn');
+  if (btn) btn.addEventListener('click', passkeyLogin, { once: false });
+})();
+</script>
+<style>
+  .passkey-divider{margin:16px 0; text-align:center; position:relative;}
+  .passkey-divider span{background:var(--card-bg); padding:0 8px; color:var(--secondary-color); font-size:12px;}
+  .passkey-divider:before{content:''; position:absolute; top:50%; left:0; right:0; height:1px; background:var(--border-color);}
+  .submit-btn.alt{background:var(--primary-hover); opacity:0.9;}
+  .submit-btn.alt:hover{opacity:1;}
+  .passkey-status{margin-top:8px; font-size:13px; min-height:18px; color:var(--secondary-color);}
+</style>
+{% endblock %}
 {% endblock %}

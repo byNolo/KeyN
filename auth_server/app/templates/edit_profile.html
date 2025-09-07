@@ -174,6 +174,21 @@
             </div>
             <i class="fas fa-chevron-right"></i>
         </a>
+        <div class="action-card passkey-manage" style="cursor:default;">
+            <div class="action-icon">
+                <i class="fas fa-fingerprint"></i>
+            </div>
+            <div class="action-content">
+                <h3>Passkeys</h3>
+                <p>Register and manage passkey credentials</p>
+                <div id="passkey-list" class="passkey-list" data-loaded="false">
+                    <em>Loading...</em>
+                </div>
+                <button type="button" id="add-passkey-btn" class="btn btn-primary small" style="margin-top:8px;">Add Passkey</button>
+                <div id="passkey-status" class="passkey-status" aria-live="polite"></div>
+            </div>
+            <i class="fas fa-chevron-right"></i>
+        </div>
     </div>
 </div>
 
@@ -574,5 +589,108 @@
         transform: none;
     }
 }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const listEl = document.getElementById('passkey-list');
+    const statusEl = document.getElementById('passkey-status');
+    async function loadPasskeys(){
+        try {
+            const resp = await fetch('/api/user/passkeys');
+            if(!resp.ok) throw new Error('Failed to load');
+            const data = await resp.json();
+            if(!Array.isArray(data) || data.length === 0){
+                listEl.innerHTML = '<p class="empty">No passkeys yet</p>';
+                return; 
+            }
+            listEl.innerHTML = '<ul>'+data.map(p=>`<li data-id="${p.id}"><strong>${p.friendly_name || 'Passkey'}</strong> <small>Added ${new Date(p.created_at).toLocaleDateString()}${p.last_used? ' • last used '+new Date(p.last_used).toLocaleDateString():''}</small><button type="button" class="remove-passkey" data-id="${p.id}">Remove</button></li>`).join('')+'</ul>';
+        } catch(e){
+            listEl.innerHTML = '<p class="error">Error loading passkeys</p>';
+        }
+    }
+    async function addPasskey(){
+        statusEl.textContent = 'Preparing registration...';
+        try {
+            const optResp = await fetch('/api/passkeys/options/register', {method:'POST'});
+            if(!optResp.ok) throw new Error('Failed to get options');
+            const options = await optResp.json();
+            function decode(b64url){
+                const pad = '='.repeat((4 - b64url.length % 4) % 4);
+                const str = (b64url + pad).replace(/-/g,'+').replace(/_/g,'/');
+                const bytes = Uint8Array.from(atob(str), c=>c.charCodeAt(0));
+                return bytes.buffer;
+            }
+            function encode(buf){
+                const bytes = new Uint8Array(buf);
+                let str='';
+                for(const b of bytes) str += String.fromCharCode(b);
+                return btoa(str).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+            }
+            options.publicKey.challenge = decode(options.publicKey.challenge);
+            options.publicKey.user.id = decode(options.publicKey.user.id);
+            if(options.publicKey.excludeCredentials){
+                options.publicKey.excludeCredentials = options.publicKey.excludeCredentials.map(c=>({...c, id: decode(c.id)}));
+            }
+            const cred = await navigator.credentials.create({publicKey: options.publicKey});
+            if(!cred) throw new Error('Registration cancelled');
+                    // DEBUG: decode clientDataJSON to inspect challenge
+                    try {
+                        const dec = new TextDecoder('utf-8').decode(cred.response.clientDataJSON);
+                        const clientData = JSON.parse(dec);
+                        console.log('[Passkey Debug] clientData.challenge', clientData.challenge);
+                        window._lastClientPasskeyChallenge = clientData.challenge;
+                        // fetch server stored challenge (if debug enabled)
+                        fetch('/api/passkeys/debug/challenge').then(r=>r.json()).then(j=>{console.log('[Passkey Debug] server challenges', j);});
+                    } catch(_e) { console.warn('Could not decode clientDataJSON'); }
+            const data = {
+                id: cred.id,
+                rawId: encode(cred.rawId),
+                type: cred.type,
+                response: {
+                    attestationObject: encode(cred.response.attestationObject),
+                    clientDataJSON: encode(cred.response.clientDataJSON),
+                    transports: cred.response.getTransports ? cred.response.getTransports() : []
+                },
+                friendly_name: 'Passkey'
+            };
+            statusEl.textContent = 'Saving passkey...';
+            const saveResp = await fetch('/api/passkeys/register', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)});
+            const saveJson = await saveResp.json();
+            if(!saveResp.ok || !saveJson.success) throw new Error(saveJson.error || 'Failed');
+            statusEl.textContent = 'Passkey added.';
+            loadPasskeys();
+        } catch(e){
+            statusEl.textContent = 'Error: ' + e.message;
+                    if(!e.message || /RegistrationCredential|clientData|attestation/i.test(e.message)){
+                        statusEl.textContent = 'Passkey could not be created. Please try again or use a different device.';
+                    }
+        }
+    }
+    async function removePasskey(id){
+        if(!confirm('Remove this passkey?')) return;
+        try {
+            const resp = await fetch('/api/user/passkeys/'+id, {method:'DELETE'});
+            const json = await resp.json();
+            if(!resp.ok) throw new Error(json.error || 'Failed');
+            loadPasskeys();
+        } catch(e){
+            alert('Failed to remove passkey: '+e.message);
+        }
+    }
+    listEl.addEventListener('click', e => {
+        if(e.target.classList.contains('remove-passkey')){
+            removePasskey(e.target.dataset.id);
+        }
+    });
+    document.getElementById('add-passkey-btn').addEventListener('click', addPasskey);
+    loadPasskeys();
+});
+</script>
+<style>
+    .passkey-list ul{list-style:none; padding:0; margin:8px 0;}
+    .passkey-list li{display:flex; flex-direction:column; gap:2px; padding:8px; border:1px solid var(--border-color); border-radius:8px; margin-bottom:6px; position:relative;}
+    .passkey-list li button.remove-passkey{position:absolute; top:6px; right:6px; background:transparent; border:none; color:var(--danger-color, #c00); cursor:pointer; font-size:12px;}
+    .passkey-status{font-size:12px; margin-top:6px; color:var(--secondary-color);}
+    .btn.small{padding:6px 12px; font-size:12px;}
 </style>
 {% endblock %}
