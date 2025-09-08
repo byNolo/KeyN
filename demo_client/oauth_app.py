@@ -12,8 +12,8 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('DEMO_CLIENT_SECRET_KEY', 'demo-client-fallback-secret')
 
 # Configuration - use environment variables for production
-AUTH_SERVER_URL = os.environ.get('KEYN_AUTH_SERVER_URL', 'https://auth-keyn.nolanbc.ca')
-CLIENT_URL = os.environ.get('KEYN_DEMO_CLIENT_URL', 'https://demo-keyn.nolanbc.ca')
+AUTH_SERVER_URL = os.environ.get('KEYN_AUTH_SERVER_URL', 'https://auth-keyn.bynolo.ca')
+CLIENT_URL = os.environ.get('KEYN_DEMO_CLIENT_URL', 'https://demo-keyn.bynolo.ca')
 
 # OAuth client credentials (in production, these would be registered with KeyN)
 CLIENT_ID = os.environ.get('KEYN_CLIENT_ID', 'tGlEIvYnAYpsWCYUjb1BH1sJPmzzjBilka03MOAHafI')

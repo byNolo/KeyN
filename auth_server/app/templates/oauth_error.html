@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}OAuth Error - KeyN{% endblock %}
+
+{% block containerType %}
+<div class="oauth-error-container">
+{% endblock %}
+
+{% block content %}
+  <div class="error-card">
+    <div class="error-icon-wrapper">
+      <div class="error-status-icon">
+        <i class="fas fa-exclamation-triangle"></i>
+        <div class="error-code">{{ error_code or '400' }}</div>
+      </div>
+    </div>
+    <h1>{{ heading or 'OAuth Error' }}</h1>
+    <p class="subtitle">{{ message or 'A problem occurred while processing your authorization request.' }}</p>
+    {% if detail_list %}
+    <ul class="detail-list">
+      {% for d in detail_list %}<li>{{ d }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+    {% if allowed_uris and allowed_uris|length > 0 %}
+    <div class="allowed-uris">
+      <h3>Registered Redirect URIs</h3>
+      <ul>
+        {% for u in allowed_uris %}<li><code>{{ u }}</code></li>{% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    {% if suggested_fix %}
+    <div class="suggested-fix">
+      <h3>How to Fix</h3>
+      <p>{{ suggested_fix }}</p>
+    </div>
+    {% endif %}
+    <div class="actions">
+      <a href="javascript:history.back()" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+      <a href="{{ url_for('auth.profile') }}" class="btn btn-primary"><i class="fas fa-user"></i> Profile</a>
+      <a href="{{ url_for('auth.authorizations_page') }}" class="btn btn-outline"><i class="fas fa-shield-check"></i> Apps</a>
+    </div>
+  </div>
+</div>
+<style>
+.oauth-error-container {min-height:80vh;display:flex;align-items:center;justify-content:center;padding:30px;background:var(--bg-color);}
+.error-card {background:var(--card-bg);border:1px solid var(--border-color);border-radius:20px;padding:40px;max-width:680px;width:100%;text-align:center;position:relative;box-shadow:0 12px 40px rgba(0,0,0,0.12);} 
+.error-status-icon {width:90px;height:90px;border-radius:22px;background:linear-gradient(135deg,#dc2626,#f87171);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;position:relative;color:#fff;font-size:34px;box-shadow:0 10px 25px rgba(220,38,38,0.4);} 
+.error-status-icon .error-code {position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);background:var(--card-bg);color:var(--text-color);padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;border:1px solid var(--border-color);}
+h1 {margin:0 0 10px;font-size:28px;}
+.subtitle {margin:0 0 16px;color:var(--text-muted);font-size:15px;}
+.detail-list {text-align:left;margin:0 0 20px;padding-left:18px;font-size:14px;}
+.detail-list li {margin-bottom:6px;line-height:1.4;}
+.allowed-uris {margin:20px 0;text-align:left;}
+.allowed-uris h3 {margin:0 0 8px;font-size:16px;}
+.allowed-uris ul {list-style:disc;margin:0;padding-left:22px;font-size:13px;}
+.allowed-uris code {background:var(--border-color);padding:2px 6px;border-radius:6px;font-size:12px;}
+.suggested-fix {margin:25px 0;text-align:left;background:var(--bg-alt,#0d1117);padding:16px 18px;border-radius:14px;border:1px solid var(--border-color);}
+.suggested-fix h3 {margin:0 0 8px;font-size:15px;}
+.actions {display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:10px;}
+.btn {text-decoration:none;padding:10px 18px;border-radius:10px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border-color);transition:.18s;background:var(--btn-bg,#2563eb);color:#fff;}
+.btn.btn-secondary {background:var(--border-color);color:var(--text-color);} 
+.btn.btn-outline {background:transparent;color:var(--text-color);} 
+.btn:hover {filter:brightness(1.1);} 
+@media (max-width:640px){.error-card{padding:30px 24px;}h1{font-size:24px;}}
+[data-theme="dark"] .error-card{box-shadow:0 12px 40px rgba(0,0,0,.55);} 
+</style>
+{% endblock %}

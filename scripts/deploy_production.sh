@@ -10,9 +10,9 @@ echo ""
 # Configuration from environment variables
 KEYN_DIR="${KEYN_PROJECT_DIR:-/home/sam/KeyN/Dev/KeyN}"
 VENV_PATH="${KEYN_VENV_PATH:-$KEYN_DIR/venv}"
-AUTH_URL="${KEYN_AUTH_SERVER_URL:-https://auth-keyn.nolanbc.ca}"
-UI_URL="${KEYN_UI_SITE_URL:-https://keyn.nolanbc.ca}"
-DEMO_URL="${KEYN_DEMO_CLIENT_URL:-https://demo-keyn.nolanbc.ca}"
+AUTH_URL="${KEYN_AUTH_SERVER_URL:-https://auth-keyn.bynolo.ca}"
+UI_URL="${KEYN_UI_SITE_URL:-https://keyn.bynolo.ca}"
+DEMO_URL="${KEYN_DEMO_CLIENT_URL:-https://demo-keyn.bynolo.ca}"
 
 # Kill any existing processes
 echo "Stopping existing services..."

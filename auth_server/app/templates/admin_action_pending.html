@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Admin Action Requested{% endblock %}
+{% block content %}
+<div class="admin-action-wrapper">
+  <div class="action-card">
+    <div class="action-icon pending">
+      <i class="fas fa-hourglass-half"></i>
+    </div>
+    <h1>Confirmation Email Sent</h1>
+    <p class="subtitle">Check your inbox to complete this admin action. The link expires in 15 minutes.</p>
+    <div class="details">
+      <p><strong>Action:</strong> {{ action_type|capitalize|replace('_',' ') }}</p>
+      {% if target_id %}<p><strong>Target:</strong> <code>{{ target_id }}</code></p>{% endif %}
+      <p class="expires">Expires At: {{ expires_at }}</p>
+    </div>
+    <a href="/admin/clients" class="btn btn-secondary">Return to Clients</a>
+  </div>
+</div>
+<style>
+.admin-action-wrapper{display:flex;justify-content:center;align-items:center;min-height:60vh;}
+.action-card{background:var(--card-bg);border:1px solid var(--border-color);border-radius:16px;padding:40px 48px;max-width:560px;width:100%;text-align:center;box-shadow:0 8px 25px rgba(0,0,0,0.1);} 
+.action-icon{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:34px;color:#fff;}
+.action-icon.pending{background:linear-gradient(135deg,#f59e0b,#d97706);} 
+.subtitle{color:var(--secondary-color);margin-top:0;margin-bottom:24px;font-size:16px;}
+.details{background:var(--bg-color);padding:16px 20px;border:1px solid var(--border-color);border-radius:12px;margin:0 0 28px;text-align:left;font-size:14px;}
+.details p{margin:0 0 8px;}
+.details p:last-child{margin-bottom:0;}
+.expires{color:var(--secondary-color);font-size:13px;}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:600;}
+.btn-secondary{background:var(--border-color);color:var(--text-color);} 
+.btn-secondary:hover{background:var(--secondary-color);} 
+</style>
+{% endblock %}

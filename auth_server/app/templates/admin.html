@@ -26,12 +26,17 @@
                     <span class="welcome-user">{{ current_user.get_full_name() }}</span>
                 </div>
             </div>
-            <a href="{{ url_for('auth.profile') }}" class="back-to-dashboard">
-                <i class="fas fa-arrow-left"></i>
-                <span>Back to Profile</span>
-            </a>
+            <div class="admin-actions">
+                <a href="{{ url_for('auth.admin_list_clients') }}" class="clients-btn" title="Manage Client Applications">
+                    <i class="fas fa-plug"></i>
+                    <span>Client applications</span>
+                </a>
+                <a href="{{ url_for('auth.profile') }}" class="back-to-dashboard">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back to Profile</span>
+                </a>
+            </div>
         </div>
-    </div>
 
     <!-- Alerts Container -->
     <div id="alerts"></div>
@@ -329,6 +334,10 @@
     transform: translateY(-1px);
 }
 
+.admin-actions {display:flex;align-items:center;gap:12px;margin-left:auto;}
+.clients-btn {display:inline-flex;align-items:center;gap:8px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);color:#6366f1;text-decoration:none;font-weight:500;padding:8px 16px;border-radius:8px;transition:.2s;}
+.clients-btn:hover {background:rgba(99,102,241,0.18);transform:translateY(-1px);} 
+
 [data-theme="dark"] .back-to-dashboard:hover {
     background: rgba(52, 211, 153, 0.15);
     border-color: rgba(52, 211, 153, 0.3);
@@ -456,6 +465,9 @@
 
 .attempts-icon {
     background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+.clients-icon {
+    background: linear-gradient(135deg, #6366f1, #4338ca);
 }
 
 .card-title {
@@ -610,6 +622,15 @@
 .btn-secondary:hover {
     background: var(--secondary-color);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+.btn-primary {
+    background: var(--primary-color);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(21,115,71,0.35);
+}
+.btn-primary:hover {
+    background: var(--primary-hover, var(--primary-color));
+    box-shadow: 0 4px 12px rgba(21,115,71,0.45);
 }
 
 /* Loading States */

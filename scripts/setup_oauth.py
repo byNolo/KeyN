@@ -42,13 +42,13 @@ def setup_oauth_system():
         # Create demo client
         redirect_uris = [
             "http://localhost:5001/oauth/callback",
-            "https://demo-keyn.nolanbc.ca/oauth/callback"
+            "https://demo-keyn.bynolo.ca/oauth/callback"
         ]
         
         client = ClientManager.create_client(
             name="KeyN OAuth Demo Client",
             description="Demo application showing OAuth integration with KeyN",
-            website_url="https://demo-keyn.nolanbc.ca",
+            website_url="https://demo-keyn.bynolo.ca",
             redirect_uris=redirect_uris,
             created_by_user_id=admin_user.id
         )

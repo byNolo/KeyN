@@ -150,3 +150,24 @@ def admin_required(f):
                 
         return f(*args, **kwargs)
     return decorated_function
+
+def send_admin_action_email(user, action_token, app, mail):
+    """Send admin action confirmation email using standard base template and inline images."""
+    try:
+        confirm_link = url_for('auth.admin_confirm_action', token=action_token.token, _external=True)
+        html_body = render_template('email/admin_action_confirm.html', user=user, action=action_token, confirm_link=confirm_link)
+        msg = Message(
+            subject=f"Confirm Admin Action - {action_token.action_type}",
+            recipients=[user.email],
+            html=html_body
+        )
+        # Attach images like other templates
+        for fname, cid in [('logo.png','<logo_image>'), ('favicon.png','<favicon_image>')]:
+            try:
+                with app.open_resource(f'static/logos/{fname}') as f:
+                    msg.attach(fname, 'image/png', f.read(), disposition='inline', headers={'Content-ID': cid})
+            except Exception as e:
+                current_app.logger.warning(f"Could not attach {fname}: {e}")
+        mail.send(msg)
+    except Exception as e:
+        current_app.logger.error(f"Failed to send admin action email: {e}")

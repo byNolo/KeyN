@@ -11,18 +11,15 @@
   - POST requests (API calls) return JSON response
 
 ### 2. ✅ **Cookie Domain Security Concern**
-- **Problem**: Risk of KeyN cookies interfering with other sites on nolanbc.ca
-- **Solution**: Isolated KeyN cookies to prevent domain conflicts
-- **Changes**:
-  - Removed broad cookie domain setting (no `.nolanbc.ca` sharing)
-  - Cookies now specific to individual subdomains
-  - Implemented secure token-based cross-domain authentication
-
-## Technical Implementation
-
-### **Logout Route Updates** (`routes.py`)
-```python
-@auth_bp.route("/logout", methods=["GET", "POST"])
+    - Removed broad cookie domain setting (no `.bynolo.ca` sharing)
+ # For security with multiple sites on bynolo.ca, we don't set a cookie domain
+ KeyN cookies no longer interfere with other bynolo.ca sites
+ KeyN cookies restricted to auth-keyn.bynolo.ca and demo-keyn.bynolo.ca
+ Other bynolo.ca sites unaffected
+ ✅ Auth Server (port 6000) → https://auth-keyn.bynolo.ca
+ ✅ UI Site (port 6001) → https://keyn.bynolo.ca  
+ ✅ Demo Client (port 6002) → https://demo-keyn.bynolo.ca
+ The logout button should now work correctly, and your KeyN system won't interfere with other sites on bynolo.ca! 🎉
 @login_required
 def logout():
     # Revoke all refresh tokens for user
@@ -42,7 +39,7 @@ def logout():
 ### **Cookie Configuration** (`config.py`)
 ```python
 # Session/Cookie configuration for SSO
-# For security with multiple sites on nolanbc.ca, we don't set a cookie domain
+# For security with multiple sites on bynolo.ca, we don't set a cookie domain
 # This keeps KeyN cookies isolated to their specific subdomains
 # SSO will work through API calls rather than shared cookies
 SESSION_COOKIE_DOMAIN = os.environ.get("FLASK_SESSION_COOKIE_DOMAIN")  # None = current domain only
@@ -115,7 +112,7 @@ def auth_callback():
 ## Security Benefits
 
 ### **🔒 Cookie Isolation**
-- KeyN cookies no longer interfere with other nolanbc.ca sites
+- KeyN cookies no longer interfere with other bynolo.ca sites
 - Each subdomain has isolated cookies
 - Prevents accidental session sharing with unrelated applications
 
@@ -137,8 +134,8 @@ def auth_callback():
 - Proper redirection after logout
 
 ### **✅ Cookie Isolation** 
-- KeyN cookies restricted to auth-keyn.nolanbc.ca and demo-keyn.nolanbc.ca
-- Other nolanbc.ca sites unaffected
+- KeyN cookies restricted to auth-keyn.bynolo.ca and demo-keyn.bynolo.ca
+- Other bynolo.ca sites unaffected
 - SSO still works between KeyN services
 
 ### **✅ Cross-Domain Auth**
@@ -149,8 +146,8 @@ def auth_callback():
 ## Service Status
 
 All KeyN services restarted successfully:
-- ✅ Auth Server (port 6000) → https://auth-keyn.nolanbc.ca
-- ✅ UI Site (port 6001) → https://keyn.nolanbc.ca  
-- ✅ Demo Client (port 6002) → https://demo-keyn.nolanbc.ca
+- ✅ Auth Server (port 6000) → https://auth-keyn.bynolo.ca
+- ✅ UI Site (port 6001) → https://keyn.bynolo.ca  
+- ✅ Demo Client (port 6002) → https://demo-keyn.bynolo.ca
 
-The logout button should now work correctly, and your KeyN system won't interfere with other sites on nolanbc.ca! 🎉
+The logout button should now work correctly, and your KeyN system won't interfere with other sites on bynolo.ca! 🎉

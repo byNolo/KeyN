@@ -188,7 +188,7 @@ tail -f logs/cron.log
 ### **Production Monitoring Commands**
 ```bash
 # Service health
-curl -s https://auth-keyn.nolanbc.ca/health | python3 -m json.tool
+curl -s https://auth-keyn.bynolo.ca/health | python3 -m json.tool
 
 # Resource usage
 du -h auth_server/instance/keyn_auth.db  # Database size

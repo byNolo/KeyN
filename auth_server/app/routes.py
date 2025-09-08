@@ -11,13 +11,14 @@ from .security_utils import (
     get_real_ip, generate_device_fingerprint, is_ip_banned, is_device_banned,
     log_login_attempt, is_rate_limited, ban_ip, ban_device, unban_ip, unban_device
 )
-from .auth_utils import admin_required
+from .auth_utils import admin_required, send_admin_action_email
 from .oauth_utils import ScopeManager, ClientManager, AuthorizationManager
 import jwt
 import datetime
 import secrets
 import os
 import json
+import uuid
 from .passkey_utils import (
     start_registration as pk_start_registration,
     finish_registration as pk_finish_registration,
@@ -130,9 +131,9 @@ def logout():
 
             if any(redirect_url.startswith(domain) for domain in allowed_domains):
                 response = make_response(redirect(redirect_url))
-                # Delete cookies for .nolanbc.ca and current domain
-                response.delete_cookie('keyn_session', domain='.nolanbc.ca', path='/')
-                response.delete_cookie('remember_token', domain='.nolanbc.ca', path='/')
+                # Delete cookies for .bynolo.ca and current domain
+                response.delete_cookie('keyn_session', domain='.bynolo.ca', path='/')
+                response.delete_cookie('remember_token', domain='.bynolo.ca', path='/')
                 response.delete_cookie('keyn_session', domain=request.host, path='/')
                 response.delete_cookie('remember_token', domain=request.host, path='/')
                 response.delete_cookie('keyn_session', path='/')
@@ -140,8 +141,8 @@ def logout():
                 return response
         # Default: redirect to login page
         response = make_response(redirect(url_for("auth.login")))
-        response.delete_cookie('keyn_session', domain='.nolanbc.ca', path='/')
-        response.delete_cookie('remember_token', domain='.nolanbc.ca', path='/')
+        response.delete_cookie('keyn_session', domain='.bynolo.ca', path='/')
+        response.delete_cookie('remember_token', domain='.bynolo.ca', path='/')
         response.delete_cookie('keyn_session', domain=request.host, path='/')
         response.delete_cookie('remember_token', domain=request.host, path='/')
         response.delete_cookie('keyn_session', path='/')
@@ -149,8 +150,8 @@ def logout():
         return response
     else:
         response = make_response(jsonify({"status": "logged out"}))
-        response.delete_cookie('keyn_session', domain='.nolanbc.ca', path='/')
-        response.delete_cookie('remember_token', domain='.nolanbc.ca', path='/')
+        response.delete_cookie('keyn_session', domain='.bynolo.ca', path='/')
+        response.delete_cookie('remember_token', domain='.bynolo.ca', path='/')
         response.delete_cookie('keyn_session', domain=request.host, path='/')
         response.delete_cookie('remember_token', domain=request.host, path='/')
         response.delete_cookie('keyn_session', path='/')
@@ -576,6 +577,138 @@ def admin_interface():
     """Admin interface for managing security"""
     return render_template("admin.html")
 
+# =============================
+# Admin Client Management (Secure)
+# =============================
+
+from .models import AdminActionToken
+from .oauth_utils import ClientManager
+
+def _create_admin_action(user_id, action_type, payload_dict):
+    token = uuid.uuid4().hex
+    expires = datetime.datetime.utcnow() + datetime.timedelta(minutes=15)
+    a = AdminActionToken(
+        token=token,
+        user_id=user_id,
+        action_type=action_type,
+        payload=json.dumps(payload_dict),
+        expires_at=expires
+    )
+    db.session.add(a)
+    db.session.commit()
+    return a
+
+def _send_admin_action_email(user, action_token):
+    # Delegate to unified email sender using base template
+    send_admin_action_email(user, action_token, current_app, mail)
+
+@auth_bp.route('/admin/clients', methods=['GET'])
+@admin_required
+def admin_list_clients():
+    clients = ClientApplication.query.order_by(ClientApplication.created_at.desc()).all()
+    return render_template('admin_clients.html', clients=clients)
+
+@auth_bp.route('/admin/clients/new', methods=['POST'])
+@admin_required
+def admin_create_client_request():
+    if not current_user.is_verified:
+        return jsonify({'error': 'Admin email must be verified'}), 403
+    data = request.get_json() or {}
+    name = data.get('name')
+    website = data.get('website_url')
+    redirect_uris = data.get('redirect_uris', [])
+    description = data.get('description')
+    if not name or not redirect_uris:
+        return jsonify({'error': 'Name and at least one redirect URI required'}), 400
+    action = _create_admin_action(current_user.id, 'create_client', {
+        'name': name,
+        'website_url': website,
+        'redirect_uris': redirect_uris,
+        'description': description
+    })
+    _send_admin_action_email(current_user, action)
+    return jsonify({'pending': True, 'token': action.token, 'expires_at': action.expires_at.isoformat()})
+
+@auth_bp.route('/admin/clients/<client_id>/update', methods=['POST'])
+@admin_required
+def admin_update_client_request(client_id):
+    if not current_user.is_verified:
+        return jsonify({'error': 'Admin email must be verified'}), 403
+    client = ClientApplication.query.filter_by(client_id=client_id).first_or_404()
+    data = request.get_json() or {}
+    fields = {k: data.get(k) for k in ['name', 'website_url', 'description', 'redirect_uris'] if k in data}
+    if 'redirect_uris' in fields and not fields['redirect_uris']:
+        return jsonify({'error': 'redirect_uris cannot be empty'}), 400
+    action = _create_admin_action(current_user.id, 'update_client', {
+        'client_id': client_id,
+        'fields': fields
+    })
+    _send_admin_action_email(current_user, action)
+    return jsonify({'pending': True, 'token': action.token})
+
+@auth_bp.route('/admin/clients/<client_id>/rotate-secret', methods=['POST'])
+@admin_required
+def admin_rotate_client_secret_request(client_id):
+    if not current_user.is_verified:
+        return jsonify({'error': 'Admin email must be verified'}), 403
+    client = ClientApplication.query.filter_by(client_id=client_id).first_or_404()
+    action = _create_admin_action(current_user.id, 'rotate_secret', {'client_id': client_id})
+    _send_admin_action_email(current_user, action)
+    return jsonify({'pending': True, 'token': action.token})
+
+@auth_bp.route('/admin/clients/<client_id>/delete', methods=['POST'])
+@admin_required
+def admin_delete_client_request(client_id):
+    if not current_user.is_verified:
+        return jsonify({'error': 'Admin email must be verified'}), 403
+    client = ClientApplication.query.filter_by(client_id=client_id).first_or_404()
+    action = _create_admin_action(current_user.id, 'delete_client', {'client_id': client_id})
+    _send_admin_action_email(current_user, action)
+    return jsonify({'pending': True, 'token': action.token})
+
+@auth_bp.route('/admin/clients/confirm/<token>', methods=['GET'])
+@admin_required
+def admin_confirm_action(token):
+    action = AdminActionToken.query.filter_by(token=token).first_or_404()
+    if not action.is_valid() or action.user_id != current_user.id:
+        return render_template('oauth_error.html', heading='Invalid or Expired Action', message='This admin confirmation link is invalid or has expired.', error_code='400'), 400
+    payload = json.loads(action.payload)
+    result_info = {}
+    if action.action_type == 'create_client':
+        client_id, client_secret = ClientManager.generate_client_credentials()
+        client = ClientApplication(
+            client_id=client_id,
+            client_secret=client_secret,
+            name=payload['name'],
+            description=payload.get('description'),
+            website_url=payload.get('website_url'),
+            created_by=current_user.id
+        )
+        client.set_redirect_uris(payload.get('redirect_uris', []))
+        db.session.add(client)
+        result_info = {'client_id': client_id, 'client_secret': client_secret}
+    elif action.action_type == 'update_client':
+        client = ClientApplication.query.filter_by(client_id=payload['client_id']).first_or_404()
+        for k, v in payload['fields'].items():
+            if k == 'redirect_uris' and v is not None:
+                client.set_redirect_uris(v)
+            elif v is not None:
+                setattr(client, k, v)
+    elif action.action_type == 'rotate_secret':
+        client = ClientApplication.query.filter_by(client_id=payload['client_id']).first_or_404()
+        _, new_secret = ClientManager.generate_client_credentials()
+        client.client_secret = new_secret
+        result_info = {'client_id': client.client_id, 'client_secret': new_secret}
+    elif action.action_type == 'delete_client':
+        client = ClientApplication.query.filter_by(client_id=payload['client_id']).first_or_404()
+        db.session.delete(client)
+    else:
+        return render_template('oauth_error.html', heading='Unsupported Action', message='Unknown admin action type.', error_code='400'), 400
+    action.used = True
+    action.used_at = datetime.datetime.utcnow()
+    db.session.commit()
+    return render_template('admin_action_complete.html', action=action, result=result_info)
+
 @auth_bp.route("/api/cross-domain-auth", methods=["POST"])
 @login_required
 def cross_domain_auth():
@@ -645,7 +778,22 @@ def oauth_authorize():
         
         # Validate redirect URI
         if not ClientManager.is_redirect_uri_valid(client, redirect_uri):
-            return jsonify({"error": "Invalid redirect URI"}), 400
+            # Show a friendly error page instead of raw JSON
+            return render_template(
+                'oauth_error.html',
+                title='Invalid Redirect URI',
+                error_code='400',
+                heading='Invalid Redirect URI',
+                message='The redirect_uri provided does not match any of the registered URLs for this application.',
+                detail_list=[
+                    'Requested: ' + (redirect_uri or 'None provided'),
+                    'Registered Redirect URIs for this client are shown below.'
+                ],
+                client=client,
+                suggested_fix='Update the application configuration to use an allowed redirect URI or add the new URI in the KeyN admin interface.',
+                docs_url=url_for('auth.oauth_authorize', client_id=client_id),
+                allowed_uris=client.get_redirect_uris() if hasattr(client, 'get_redirect_uris') else []
+            ), 400
         
         # Parse and validate scopes
         scope_names = [s.strip() for s in scope.split(',') if s.strip()]

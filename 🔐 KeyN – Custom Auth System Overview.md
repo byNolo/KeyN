@@ -10,15 +10,15 @@ Create a centralized, secure, and resume-worthy authentication system (KeyN) tha
 
 | Component | Description | URL (for now) |
 | --- | --- | --- |
-| **KeyN UI Site** | Public-facing marketing/promo/info page for KeyN | `https://KeyN.nolanbc.ca` |
-| **KeyN Auth Server** | The backend auth system that handles login & tokens | `https://auth-keyn.nolanbc.ca` |
-| **Vinyl Vote** | Album rating app that consumes KeyN's login system | `https://Album.nolanbc.ca` |
-| **SideQuest** | Challenge/quest app that also uses KeyN login | `https://sq.nolanbc.ca` | (not made yet)
-| **Landing Page** | Central hub that also authenticates via KeyN | `https://nolanbc.ca` |
+| **KeyN UI Site** | Public-facing marketing/promo/info page for KeyN | `https://KeyN.bynolo.ca` |
+| **KeyN Auth Server** | The backend auth system that handles login & tokens | `https://auth-keyn.bynolo.ca` |
+| **Vinyl Vote** | Album rating app that consumes KeyN's login system | `https://Album.bynolo.ca` |
+| **SideQuest** | Challenge/quest app that also uses KeyN login | `https://sq.bynolo.ca` | (not made yet)
+| **Landing Page** | Central hub that also authenticates via KeyN | `https://bynolo.ca` |
 
 ---
 
-## 🛠️ KeyN Auth Server Features (`auth-keyn.nolanbc.ca`)
+## 🛠️ KeyN Auth Server Features (`auth-keyn.bynolo.ca`)
 
 ### Core Endpoints
 
@@ -34,7 +34,7 @@ Create a centralized, secure, and resume-worthy authentication system (KeyN) tha
 
 ---
 
-## 🧱 KeyN UI Site (`KeyN.nolanbc.ca`)
+## 🧱 KeyN UI Site (`KeyN.bynolo.ca`)
 
 - Landing page for your auth system
 - Public documentation / about / contact info
@@ -47,7 +47,7 @@ Create a centralized, secure, and resume-worthy authentication system (KeyN) tha
 
 | Auth Method | Status |
 | --- | --- |
-| Cookie-based session | ✅ Primary login system (via `.nolanbc.ca`) |
+| Cookie-based session | ✅ Primary login system (via `.bynolo.ca`) |
 | JWT-based token API | ✅ Used by client apps to validate session |
 | Refresh tokens | ✅ Optional but recommended |
 | OAuth2-style flow | 🔜 Future upgrade path |
@@ -56,10 +56,10 @@ Create a centralized, secure, and resume-worthy authentication system (KeyN) tha
 
 ## 🔄 Login Flow (SSO Style)
 
-1. User visits `vv.nolanbc.ca` or `sq.nolanbc.ca`
+1. User visits `vv.bynolo.ca` or `sq.bynolo.ca`
 2. Site checks session or access token
-3. If missing/expired → redirect to `auth-keyn.nolanbc.ca/login?redirect=https://vv.nolanbc.ca/return`
-4. User logs in → KeyN sets a cookie for `.nolanbc.ca`
+3. If missing/expired → redirect to `auth-keyn.bynolo.ca/login?redirect=https://vv.bynolo.ca/return`
+4. User logs in → KeyN sets a cookie for `.bynolo.ca`
 5. User is redirected back, fully authenticated
 6. Client app uses access token or verifies session with `GET /api/validate-token`
 
@@ -92,5 +92,5 @@ Create a centralized, secure, and resume-worthy authentication system (KeyN) tha
 | Name | Role |
 | --- | --- |
 | **KeyN** | Your custom authentication system |
-| `KeyN.nolanbc.ca` | The public-facing site for KeyN |
-| `auth-keyn.nolanbc.ca` | The backend auth API and login server |
+| `KeyN.bynolo.ca` | The public-facing site for KeyN |
+| `auth-keyn.bynolo.ca` | The backend auth API and login server |

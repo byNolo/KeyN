@@ -12,9 +12,9 @@ HEALTH_LOG="$KEYN_DIR/logs/health_check.log"
 AUTO_RESTART=${1:-false}  # Pass 'true' as first argument to enable auto-restart
 
 # Health check URLs from environment or defaults
-AUTH_HEALTH_URL="${KEYN_HEALTH_CHECK_AUTH_URL:-https://auth-keyn.nolanbc.ca/health}"
-UI_SITE_URL="${KEYN_HEALTH_CHECK_UI_URL:-https://keyn.nolanbc.ca}"
-DEMO_CLIENT_URL="${KEYN_HEALTH_CHECK_DEMO_URL:-https://demo-keyn.nolanbc.ca}"
+AUTH_HEALTH_URL="${KEYN_HEALTH_CHECK_AUTH_URL:-https://auth-keyn.bynolo.ca/health}"
+UI_SITE_URL="${KEYN_HEALTH_CHECK_UI_URL:-https://keyn.bynolo.ca}"
+DEMO_CLIENT_URL="${KEYN_HEALTH_CHECK_DEMO_URL:-https://demo-keyn.bynolo.ca}"
 
 # Ensure logs directory exists
 mkdir -p "$KEYN_DIR/logs"

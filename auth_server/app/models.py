@@ -135,6 +135,36 @@ class ClientApplication(db.Model):
     # Relationships
     authorizations = db.relationship('UserAuthorization', backref='client', lazy=True, cascade='all, delete-orphan')
 
+    def get_redirect_uris(self):
+        """Return list of redirect URIs parsed from JSON text field."""
+        try:
+            import json
+            return json.loads(self.redirect_uris) if self.redirect_uris else []
+        except Exception:
+            return []
+
+    def set_redirect_uris(self, uris_list):
+        """Store list as JSON."""
+        import json
+        self.redirect_uris = json.dumps(uris_list or [])
+
+class AdminActionToken(db.Model):
+    """Email-confirmed admin actions for sensitive client application changes"""
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(128), unique=True, nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    action_type = db.Column(db.String(64), nullable=False)  # create_client, update_client, delete_client, rotate_secret
+    payload = db.Column(db.Text)  # JSON describing the action
+    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    used = db.Column(db.Boolean, default=False)
+    used_at = db.Column(db.DateTime)
+
+    user = db.relationship('User', backref=db.backref('admin_action_tokens', lazy=True, cascade='all, delete-orphan'))
+
+    def is_valid(self):
+        return (not self.used) and (self.expires_at > datetime.datetime.utcnow())
+
 class DataScope(db.Model):
     """Defines available data scopes that can be requested"""
     id = db.Column(db.Integer, primary_key=True)

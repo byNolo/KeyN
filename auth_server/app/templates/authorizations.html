@@ -45,9 +45,15 @@
         </div>
 
         <!-- Footer -->
-        <div class="auth-footer">
-            <p>Powered by <strong>KeyN</strong> Authentication</p>
-        </div>
+    <div class="auth-footer">
+      <div class="footer-actions">
+        <a href="{{ url_for('auth.profile') }}" class="back-link">
+          <i class="fas fa-arrow-left"></i>
+          <span>Back to Profile</span>
+        </a>
+      </div>
+      <p>Powered by <strong>KeyN</strong> Authentication</p>
+    </div>
     </div>
 </div>
 
@@ -578,6 +584,38 @@
 
 .auth-footer strong {
   color: var(--primary-color);
+}
+
+/* Back link styles (mirroring sessions page) */
+.footer-actions { flex: 1; }
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: rgba(21, 115, 71, 0.1);
+  border: 1px solid rgba(21, 115, 71, 0.2);
+  transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .back-link {
+  background: rgba(52, 211, 153, 0.1);
+  border-color: rgba(52, 211, 153, 0.2);
+}
+
+.back-link:hover {
+  background: rgba(21, 115, 71, 0.15);
+  border-color: rgba(21, 115, 71, 0.3);
+  transform: translateY(-1px);
+}
+
+[data-theme="dark"] .back-link:hover {
+  background: rgba(52, 211, 153, 0.15);
+  border-color: rgba(52, 211, 153, 0.3);
 }
 
 /* Mobile Responsive Design */

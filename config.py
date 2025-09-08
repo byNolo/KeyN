@@ -27,7 +27,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = os.environ.get("FLASK_SQLALCHEMY_TRACK_MODIFICATIONS", "False") == "True"
     
     # Session/Cookie configuration for SSO
-    # For security with multiple sites on nolanbc.ca, we don't set a cookie domain
+    # For security with multiple sites on bynolo.ca, we don't set a cookie domain
     # This keeps KeyN cookies isolated to their specific subdomains
     # SSO will work through API calls rather than shared cookies
     SESSION_COOKIE_DOMAIN = os.environ.get("FLASK_SESSION_COOKIE_DOMAIN")  # None = current domain only

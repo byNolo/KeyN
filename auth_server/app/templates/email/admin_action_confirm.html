@@ -1,0 +1,38 @@
+{% extends "email/base_email.html" %}
+
+{% block title %}Admin Action Confirmation - KeyN{% endblock %}
+{% block email_title %}Confirm Admin Action{% endblock %}
+{% block email_subtitle %}Security verification required to proceed{% endblock %}
+
+{% block email_content %}
+<p>Hello <strong>{{ user.username }}</strong>,</p>
+
+<p>An administrative action has been requested in the KeyN authentication system that requires your confirmation:</p>
+
+<div class="info-box" style="background:#f0f9ff;border-left:4px solid #157347;padding:14px 18px;margin:22px 0;border-radius:0 8px 8px 0;">
+	<h4 style="margin:0 0 6px 0;font-size:15px;">Action Details</h4>
+	<ul style="margin:0 0 0 18px;padding:0;">
+		<li style="color:#64748b;font-size:14px;margin-bottom:4px;"><strong>Type:</strong> {{ action.action_type }}</li>
+		<li style="color:#64748b;font-size:14px;margin-bottom:4px;"><strong>Requested At:</strong> {{ action.created_at }}</li>
+		<li style="color:#64748b;font-size:14px;margin-bottom:4px;"><strong>Expires:</strong> {{ action.expires_at }}</li>
+		<li style="color:#64748b;font-size:14px;"><strong>Token:</strong> {{ action.token }}</li>
+	</ul>
+</div>
+
+<p>If you initiated this request, please confirm it now. The action will not be applied until you approve it.</p>
+
+<div class="button-container">
+	<a href="{{ confirm_link }}" class="btn-primary" style="background:#157347;color:#fff;text-decoration:none;display:inline-block;padding:14px 28px;border-radius:8px;font-weight:600;">Confirm Action</a>
+</div>
+
+<p>If you did NOT initiate this action, you can safely ignore this email—no changes will be made and the request will automatically expire.</p>
+
+<div class="info-box" style="background:#fff7ed;border-left:4px solid #f59e0b;padding:14px 18px;margin:24px 0;border-radius:0 8px 8px 0;">
+	<h4 style="margin:0 0 6px 0;font-size:15px;">Security Tip</h4>
+	<p style="margin:0;font-size:14px;color:#64748b;">Only confirm actions you intentionally initiated. Never share administrative confirmation links or secrets.</p>
+</div>
+{% endblock %}
+
+{% block footer_disclaimer %}
+You are receiving this email because an admin action was initiated using your KeyN administrator account. If this wasn't you, we recommend reviewing recent security activity.
+{% endblock %}

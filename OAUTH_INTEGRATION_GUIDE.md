@@ -46,7 +46,7 @@ Or via API:
 ```python
 import requests
 
-response = requests.post('https://auth-keyn.nolanbc.ca/api/client/register', 
+response = requests.post('https://auth-keyn.bynolo.ca/api/client/register', 
     json={
         'name': 'My Application',
         'description': 'Description of my app',
@@ -66,7 +66,7 @@ client_secret = client_data['client_secret']
 Redirect users to KeyN for authorization:
 
 ```
-https://auth-keyn.nolanbc.ca/oauth/authorize?
+https://auth-keyn.bynolo.ca/oauth/authorize?
   client_id=YOUR_CLIENT_ID&
   redirect_uri=https://myapp.com/auth/callback&
   scope=id,username,email,full_name&
@@ -96,7 +96,7 @@ Exchange the code for an access token:
 ```python
 import requests
 
-response = requests.post('https://auth-keyn.nolanbc.ca/oauth/token', data={
+response = requests.post('https://auth-keyn.bynolo.ca/oauth/token', data={
     'grant_type': 'authorization_code',
     'code': authorization_code,
     'client_id': client_id,
@@ -113,7 +113,7 @@ access_token = token_data['access_token']
 Use the access token to get user data:
 
 ```python
-response = requests.get('https://auth-keyn.nolanbc.ca/api/user-scoped',
+response = requests.get('https://auth-keyn.bynolo.ca/api/user-scoped',
     headers={'Authorization': f'Bearer {access_token}'}
 )
 

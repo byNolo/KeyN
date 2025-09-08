@@ -4,7 +4,7 @@
 
 ## 🎯 Overview
 
-This guide shows you how to integrate KeyN Single Sign-On authentication into any web application. KeyN uses a domain-wide `keyn_session` cookie approach that provides seamless SSO across all your `.nolanbc.ca` subdomains while avoiding conflicts with other services.
+This guide shows you how to integrate KeyN Single Sign-On authentication into any web application. KeyN uses a domain-wide `keyn_session` cookie approach that provides seamless SSO across all your `.bynolo.ca` subdomains while avoiding conflicts with other services.
 
 **Key Features:**
 - ✅ **Seamless SSO**: Users login once and access all apps without redirects
@@ -38,7 +38,7 @@ def require_keyn_auth():
     # Try to authenticate with KeyN using cookies
     try:
         response = requests.get(
-            'https://auth-keyn.nolanbc.ca/api/user',
+            'https://auth-keyn.bynolo.ca/api/user',
             cookies=request.cookies,
             timeout=5
         )
@@ -55,7 +55,7 @@ def require_keyn_auth():
     
     # Not authenticated - redirect to KeyN login
     return_url = request.url
-    login_url = 'https://auth-keyn.nolanbc.ca/login?' + urlencode({
+    login_url = 'https://auth-keyn.bynolo.ca/login?' + urlencode({
         'redirect': return_url
     })
     
@@ -84,17 +84,17 @@ def logout():
     # Redirect to KeyN logout with redirect parameter to return to this app
     from urllib.parse import urlencode
     redirect_url = request.url_root  # Your app's home page
-    logout_url = 'https://auth-keyn.nolanbc.ca/logout?' + urlencode({'redirect': redirect_url})
+    logout_url = 'https://auth-keyn.bynolo.ca/logout?' + urlencode({'redirect': redirect_url})
     return redirect(logout_url)
 ```
 
 > **How KeyN Logout Works:**
 >
-> When you redirect users to `https://auth-keyn.nolanbc.ca/logout`, KeyN will:
+> When you redirect users to `https://auth-keyn.bynolo.ca/logout`, KeyN will:
 > - Revoke all refresh tokens for the user (logging them out of all KeyN-connected apps and sessions)
 > - Log out the user from KeyN
 > - Clear the KeyN session
-> - **Explicitly delete the SSO cookies (`keyn_session` and `remember_token`) for the `.nolanbc.ca` domain**
+> - **Explicitly delete the SSO cookies (`keyn_session` and `remember_token`) for the `.bynolo.ca` domain**
 > - Redirect the user back to your app (using the `redirect` parameter)
 >
 > This ensures users are fully logged out of KeyN and any app using KeyN authentication. You do not need to perform any additional logout steps for KeyN SSO. If the user tries to log in again, they must re-authenticate.
@@ -128,7 +128,7 @@ def require_keyn_auth():
     # Try to authenticate with KeyN using cookies
     try:
         response = requests.get(
-            'https://auth-keyn.nolanbc.ca/api/user',
+            'https://auth-keyn.bynolo.ca/api/user',
             cookies=request.cookies,
             timeout=5
         )
@@ -145,7 +145,7 @@ def require_keyn_auth():
     
     # Not authenticated - redirect to KeyN login
     callback_url = request.url_root + 'auth/callback'
-    login_url = 'https://auth-keyn.nolanbc.ca/login?' + urlencode({
+    login_url = 'https://auth-keyn.bynolo.ca/login?' + urlencode({
         'redirect': callback_url
     })
     
@@ -170,7 +170,7 @@ from functools import wraps
 class KeyNAuth:
     """Complete KeyN authentication integration"""
     
-    def __init__(self, auth_server_url='https://auth-keyn.nolanbc.ca'):
+    def __init__(self, auth_server_url='https://auth-keyn.bynolo.ca'):
         self.auth_server = auth_server_url
         self.logger = logging.getLogger('keyn_auth')
         
@@ -350,7 +350,7 @@ from urllib.parse import urlencode
 class KeyNMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
-        self.auth_server = 'https://auth-keyn.nolanbc.ca'
+    self.auth_server = 'https://auth-keyn.bynolo.ca'
 
     def __call__(self, request):
         # Check KeyN authentication
@@ -381,7 +381,7 @@ def require_keyn_auth(view_func):
     """Decorator for Django views"""
     def wrapper(request, *args, **kwargs):
         if not request.session.get('keyn_user_id'):
-            login_url = f"https://auth-keyn.nolanbc.ca/login?" + urlencode({
+            login_url = f"https://auth-keyn.bynolo.ca/login?" + urlencode({
                 'redirect': request.build_absolute_uri()
             })
             return redirect(login_url)
@@ -412,7 +412,7 @@ app.use(session({
     saveUninitialized: false
 }));
 
-const KEYN_AUTH_SERVER = 'https://auth-keyn.nolanbc.ca';
+const KEYN_AUTH_SERVER = 'https://auth-keyn.bynolo.ca';
 
 // KeyN authentication middleware
 async function checkKeyNAuth(req, res, next) {
@@ -493,7 +493,7 @@ def require_api_auth(f):
         # Validate token with KeyN
         try:
             response = requests.get(
-                'https://auth-keyn.nolanbc.ca/api/validate-token',
+                'https://auth-keyn.bynolo.ca/api/validate-token',
                 params={'token': token},
                 timeout=5
             )
@@ -530,7 +530,7 @@ def get_keyn_access_token():
     """Get a secure access token from KeyN for API calls"""
     try:
         response = requests.post(
-            'https://auth-keyn.nolanbc.ca/api/cross-domain-auth',
+            'https://auth-keyn.bynolo.ca/api/cross-domain-auth',
             json={'client_domain': request.url_root},
             cookies=request.cookies,
             headers={'Content-Type': 'application/json'},
@@ -553,7 +553,7 @@ def auth_callback():
     # Get user info via cookies
     try:
         response = requests.get(
-            'https://auth-keyn.nolanbc.ca/api/user',
+            'https://auth-keyn.bynolo.ca/api/user',
             cookies=request.cookies,
             timeout=5
         )
@@ -585,7 +585,7 @@ For single-page applications:
 ```javascript
 class KeyNAuth {
     constructor() {
-        this.authServer = 'https://auth-keyn.nolanbc.ca';
+    this.authServer = 'https://auth-keyn.bynolo.ca';
         this.currentUser = null;
     }
     
@@ -667,7 +667,7 @@ Add these to your application's environment:
 
 ```bash
 # KeyN Configuration
-KEYN_AUTH_SERVER=https://auth-keyn.nolanbc.ca
+KEYN_AUTH_SERVER=https://auth-keyn.bynolo.ca
 KEYN_ENABLED=true
 KEYN_TIMEOUT=10  # seconds
 
@@ -712,21 +712,21 @@ Here are the KeyN API endpoints available for integration:
 ```python
 # Get current user info
 response = requests.get(
-    'https://auth-keyn.nolanbc.ca/api/user',
+    'https://auth-keyn.bynolo.ca/api/user',
     cookies=request.cookies
 )
 # Returns: {'user_id': 123, 'username': 'john_doe'}
 
 # Validate an access token
 response = requests.get(
-    'https://auth-keyn.nolanbc.ca/api/validate-token',
+    'https://auth-keyn.bynolo.ca/api/validate-token',
     params={'token': 'your-token-here'}
 )
 # Returns: {'valid': True, 'user_id': 123}
 
 # Get cross-domain access token
 response = requests.post(
-    'https://auth-keyn.nolanbc.ca/api/cross-domain-auth',
+    'https://auth-keyn.bynolo.ca/api/cross-domain-auth',
     json={'client_domain': 'https://yourapp.com'},
     cookies=request.cookies
 )
@@ -846,7 +846,7 @@ def safe_keyn_auth_check():
     """Robust authentication check with error handling"""
     try:
         response = requests.get(
-            'https://auth-keyn.nolanbc.ca/api/user',
+            'https://auth-keyn.bynolo.ca/api/user',
             cookies=request.cookies,
             timeout=5
         )
@@ -930,7 +930,7 @@ Before deploying your KeyN-integrated app:
 
 If you run into issues:
 
-1. **Check KeyN Health**: Visit `https://auth-keyn.nolanbc.ca/health`
+1. **Check KeyN Health**: Visit `https://auth-keyn.bynolo.ca/health`
 2. **Review Logs**: Check your integration logs and KeyN logs
 3. **Test Manually**: Try the authentication flow manually
 4. **CORS Issues**: Verify your domain is in KeyN's allowed origins
