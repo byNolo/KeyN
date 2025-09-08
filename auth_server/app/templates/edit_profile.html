@@ -603,7 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 listEl.innerHTML = '<p class="empty">No passkeys yet</p>';
                 return; 
             }
-            listEl.innerHTML = '<ul>'+data.map(p=>`<li data-id="${p.id}"><strong>${p.friendly_name || 'Passkey'}</strong> <small>Added ${new Date(p.created_at).toLocaleDateString()}${p.last_used? ' • last used '+new Date(p.last_used).toLocaleDateString():''}</small><button type="button" class="remove-passkey" data-id="${p.id}">Remove</button></li>`).join('')+'</ul>';
+            listEl.innerHTML = '<ul>'+data.map(p=>`<li data-id="${p.id}"><strong class="pk-name">${p.friendly_name || 'Passkey'}</strong> <small>Added ${new Date(p.created_at).toLocaleDateString()}${p.last_used? ' • last used '+new Date(p.last_used).toLocaleDateString():''}</small><span class="inline-actions"><button type="button" class="rename-passkey" data-id="${p.id}">Rename</button><button type="button" class="remove-passkey" data-id="${p.id}">Remove</button></span></li>`).join('')+'</ul>';
         } catch(e){
             listEl.innerHTML = '<p class="error">Error loading passkeys</p>';
         }
@@ -642,6 +642,24 @@ document.addEventListener('DOMContentLoaded', () => {
                         // fetch server stored challenge (if debug enabled)
                         fetch('/api/passkeys/debug/challenge').then(r=>r.json()).then(j=>{console.log('[Passkey Debug] server challenges', j);});
                     } catch(_e) { console.warn('Could not decode clientDataJSON'); }
+            function guessPasskeyName(){
+                const ua = navigator.userAgent;
+                let device='Device';
+                if(/iPhone/i.test(ua)) device='iPhone';
+                else if(/iPad/i.test(ua)) device='iPad';
+                else if(/Macintosh|Mac OS X/.test(ua)) device='Mac';
+                else if(/Windows NT/.test(ua)) device='Windows PC';
+                else if(/Android/.test(ua)) device='Android';
+                else if(/Linux/.test(ua)) device='Linux';
+                let browser='Browser';
+                if(/Edg\//.test(ua)) browser='Edge';
+                else if(/Chrome\//.test(ua) && !/Edg\//.test(ua) && !/OPR\//.test(ua)) browser='Chrome';
+                else if(/Safari\//.test(ua) && /Version\//.test(ua)) browser='Safari';
+                else if(/Firefox\//.test(ua)) browser='Firefox';
+                else if(/OPR\//.test(ua)) browser='Opera';
+                return device + ' ' + browser;
+            }
+            let fname = prompt('Optional name for this passkey (e.g. "MacBook", "Pixel 8"):', guessPasskeyName());
             const data = {
                 id: cred.id,
                 rawId: encode(cred.rawId),
@@ -651,7 +669,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     clientDataJSON: encode(cred.response.clientDataJSON),
                     transports: cred.response.getTransports ? cred.response.getTransports() : []
                 },
-                friendly_name: 'Passkey'
+                friendly_name: fname ? fname.slice(0,60) : 'Passkey'
             };
             statusEl.textContent = 'Saving passkey...';
             const saveResp = await fetch('/api/passkeys/register', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)});
@@ -680,6 +698,16 @@ document.addEventListener('DOMContentLoaded', () => {
     listEl.addEventListener('click', e => {
         if(e.target.classList.contains('remove-passkey')){
             removePasskey(e.target.dataset.id);
+        } else if(e.target.classList.contains('rename-passkey')) {
+            const li = e.target.closest('li');
+            const id = li.getAttribute('data-id');
+            const current = li.querySelector('.pk-name').textContent.trim();
+            const name = prompt('New passkey name:', current) || current;
+            const finalName = name.slice(0,60);
+            if(finalName !== current){
+                fetch('/api/user/passkeys/'+id, {method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({friendly_name: finalName})})
+                  .then(r=>r.json()).then(j=>{ if(j.success){ li.querySelector('.pk-name').textContent = j.credential.friendly_name; } else { alert(j.error || 'Rename failed'); } });
+            }
         }
     });
     document.getElementById('add-passkey-btn').addEventListener('click', addPasskey);
@@ -689,7 +717,10 @@ document.addEventListener('DOMContentLoaded', () => {
 <style>
     .passkey-list ul{list-style:none; padding:0; margin:8px 0;}
     .passkey-list li{display:flex; flex-direction:column; gap:2px; padding:8px; border:1px solid var(--border-color); border-radius:8px; margin-bottom:6px; position:relative;}
-    .passkey-list li button.remove-passkey{position:absolute; top:6px; right:6px; background:transparent; border:none; color:var(--danger-color, #c00); cursor:pointer; font-size:12px;}
+    .passkey-list li .inline-actions{ display:flex; gap:8px; margin-top:4px; }
+    .passkey-list li button.remove-passkey{background:transparent; border:none; color:var(--danger-color, #c00); cursor:pointer; font-size:12px;}
+    .passkey-list li button.rename-passkey{background:transparent; border:1px solid var(--border-color); color:var(--text-color); cursor:pointer; font-size:12px; padding:2px 6px; border-radius:6px;}
+    .passkey-list li button.rename-passkey:hover{background:var(--primary-color); color:#fff;}
     .passkey-status{font-size:12px; margin-top:6px; color:var(--secondary-color);}
     .btn.small{padding:6px 12px; font-size:12px;}
 </style>

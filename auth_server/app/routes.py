@@ -1076,6 +1076,23 @@ def delete_user_passkey(pk_id):
     _db.session.commit()
     return jsonify({'success': True})
 
+@auth_bp.route('/api/user/passkeys/<int:pk_id>', methods=['PATCH'])
+@login_required
+def rename_user_passkey(pk_id):
+    """Update friendly_name for a user's passkey."""
+    data = request.get_json() or {}
+    name = (data.get('friendly_name') or '').strip()
+    if not name:
+        return jsonify({'error': 'friendly_name required'}), 400
+    if len(name) > 60:
+        name = name[:60]
+    cred = PasskeyCredential.query.filter_by(id=pk_id, user_id=current_user.id).first()
+    if not cred:
+        return jsonify({'error': 'Not found'}), 404
+    cred.friendly_name = name
+    db.session.commit()
+    return jsonify({'success': True, 'credential': cred.to_dict()})
+
 @auth_bp.route("/authorizations")
 @login_required
 def authorizations_page():
@@ -1095,6 +1112,14 @@ def sessions_page():
         "user_agent": t.user_agent
     } for t in tokens]
     return render_template("sessions.html", sessions=sessions)
+
+@auth_bp.route('/passkeys', methods=['GET'])
+@login_required
+def passkeys_page():
+    """Dedicated page for managing / adding WebAuthn passkeys."""
+    # Provide existing credentials to template
+    existing = [p.to_dict() for p in current_user.passkeys]
+    return render_template('passkeys.html', passkeys=existing)
 
 @auth_bp.route("/sessions/<int:session_id>/revoke", methods=["POST"])
 @login_required
@@ -1307,6 +1332,14 @@ def passkeys_register():
         cred = pk_finish_registration(current_user, data, challenge)
         session.pop('webauthn_reg_challenge', None)
         session.pop('webauthn_reg_challenge_b64', None)
+        # Optional friendly name
+        friendly_name = (data.get('friendly_name') or '').strip() if isinstance(data, dict) else ''
+        if friendly_name:
+            # sanitize length
+            if len(friendly_name) > 60:
+                friendly_name = friendly_name[:60]
+            cred.friendly_name = friendly_name
+            db.session.commit()
         return jsonify({'success': True, 'credential': cred.to_dict()})
     except Exception as e:
         if current_app.config.get('PASSKEY_DEBUG'):

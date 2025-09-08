@@ -249,6 +249,24 @@
             }
             const cred = await navigator.credentials.create({ publicKey: pub });
             if(!cred) throw new Error('No credential created');
+            function guessPasskeyName(){
+                const ua = navigator.userAgent;
+                let device='Device';
+                if(/iPhone/i.test(ua)) device='iPhone';
+                else if(/iPad/i.test(ua)) device='iPad';
+                else if(/Macintosh|Mac OS X/.test(ua)) device='Mac';
+                else if(/Windows NT/.test(ua)) device='Windows PC';
+                else if(/Android/.test(ua)) device='Android';
+                else if(/Linux/.test(ua)) device='Linux';
+                let browser='Browser';
+                if(/Edg\//.test(ua)) browser='Edge';
+                else if(/Chrome\//.test(ua) && !/Edg\//.test(ua) && !/OPR\//.test(ua)) browser='Chrome';
+                else if(/Safari\//.test(ua) && /Version\//.test(ua)) browser='Safari';
+                else if(/Firefox\//.test(ua)) browser='Firefox';
+                else if(/OPR\//.test(ua)) browser='Opera';
+                return device + ' ' + browser;
+            }
+            const suggested = guessPasskeyName();
             const regData = {
                 id: cred.id,
                 rawId: arrayBufferToB64url(cred.rawId),
@@ -260,6 +278,9 @@
                 }
             };
             statusEl.textContent='Verifying...';
+            // Ask for friendly name with suggestion
+            let fname = prompt('Optional name for this passkey (e.g. "MacBook Safari", "iPhone TouchID"):', suggested);
+            if(fname){ regData.friendly_name = fname.slice(0,60); }
             const verify = await fetch('/api/passkeys/register',{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(regData)});
             const verifyJson = await verify.json();
             if(!verify.ok || !verifyJson.success) throw new Error(verifyJson.error || 'Registration failed');

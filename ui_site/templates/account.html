@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}Account – KeyN{% endblock %}
+
+{% block content %}
+<section class="hero compact">
+  <div class="hero-text">
+    <h1>Your Account</h1>
+    {% if keyn_user %}
+      <p class="lead">Welcome back <strong>{{ keyn_user.username }}</strong>. Manage your unified authentication footprint across connected apps.</p>
+    {% else %}
+      <p class="lead">You need to sign in with KeyN to view account details.</p>
+    {% endif %}
+  </div>
+</section>
+
+{% if not keyn_user %}
+  <div class="card center" style="max-width:640px; margin:0 auto;">
+    <h2>Sign In Required</h2>
+    <p>Access profile, sessions, and connected applications once authenticated.</p>
+    <a class="btn" href="/login">Login with KeyN</a>
+  </div>
+{% else %}
+<div class="grid">
+  <div class="card">
+    <h3>Quick Links</h3>
+    <div class="action-grid">
+      <a href="https://auth-keyn.bynolo.ca/profile" class="action-tile">
+        <i class="fas fa-user"></i>
+        <div>
+          <strong>Profile</strong>
+          <small>View your profile</small>
+        </div>
+      </a>
+      <a href="https://auth-keyn.bynolo.ca/profile/edit" class="action-tile">
+        <i class="fas fa-edit"></i>
+        <div>
+          <strong>Edit Profile</strong>
+          <small>Update details & bio</small>
+        </div>
+      </a>
+      <a href="https://auth-keyn.bynolo.ca/profile/change-password" class="action-tile">
+        <i class="fas fa-key"></i>
+        <div>
+          <strong>Password</strong>
+          <small>Change password</small>
+        </div>
+      </a>
+      <a href="https://auth-keyn.bynolo.ca/sessions" class="action-tile">
+        <i class="fas fa-devices"></i>
+        <div>
+          <strong>Sessions</strong>
+          <small>Manage active sessions</small>
+        </div>
+      </a>
+      <a href="https://auth-keyn.bynolo.ca/authorizations" class="action-tile">
+        <i class="fas fa-shield-check"></i>
+        <div>
+          <strong>Authorized Apps</strong>
+          <small>Review permissions</small>
+        </div>
+      </a>
+  <a href="https://auth-keyn.bynolo.ca/passkeys" class="action-tile">
+        <i class="fas fa-fingerprint"></i>
+        <div>
+          <strong>Passkeys</strong>
+          <small>Add passwordless login</small>
+        </div>
+      </a>
+    </div>
+    <div class="note">Advanced account management occurs on the Auth portal.</div>
+  </div>
+
+  <div class="card">
+    <h3>Status</h3>
+    <ul class="info-list">
+      <li><span>Username</span><strong>{{ keyn_user.username }}</strong></li>
+      <li><span>User ID</span><code>{{ keyn_user.user_id }}</code></li>
+      {% if keyn_user.access_token %}
+      <li><span>Token Cached</span><strong>Yes</strong></li>
+      {% endif %}
+    </ul>
+    <a href="/logout" class="btn btn-outline" style="margin-top:12px;">Logout</a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" defer></script>
+{% endblock %}

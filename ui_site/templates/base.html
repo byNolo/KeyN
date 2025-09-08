@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}KeyN – Unified Authentication{% endblock %}</title>
+  <script>
+    (function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlTheme = urlParams.get('theme');
+      if (urlTheme && (urlTheme === 'light' || urlTheme === 'dark')) {
+        document.documentElement.setAttribute('data-theme', urlTheme);
+        localStorage.setItem('keyn-theme', urlTheme);
+      } else {
+        const savedTheme = localStorage.getItem('keyn-theme');
+        if (savedTheme) {
+          document.documentElement.setAttribute('data-theme', savedTheme);
+        } else {
+          const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          document.documentElement.setAttribute('data-theme', systemPrefersDark ? 'dark' : 'light');
+        }
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ui.css') }}?v={{ cache_version }}">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logos/favicon-light.svg') }}?v={{ cache_version }}" media="(prefers-color-scheme: light)">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logos/favicon-dark.svg') }}?v={{ cache_version }}" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#157347">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <header class="site-header">
+    <div class="nav-inner">
+      <a href="/" class="brand" aria-label="KeyN Home">
+        <img src="{{ url_for('static', filename='logos/light-mode-keyn-logo.svg') }}" alt="KeyN Logo" class="logo logo-light">
+        <img src="{{ url_for('static', filename='logos/dark-mode-keyn-logo.svg') }}" alt="KeyN Logo" class="logo logo-dark">
+        <span class="brand-name">KeyN</span>
+      </a>
+      <nav class="main-nav">
+        <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}">Home</a>
+        <a href="/account" class="nav-link {% if request.path.startswith('/account') %}active{% endif %}">Account</a>
+        <a href="https://demo-keyn.bynolo.ca" class="nav-link" target="_blank" rel="noopener">Demo</a>
+        <a href="https://auth-keyn.bynolo.ca/register" class="nav-link">Register</a>
+      </nav>
+      <div class="nav-actions">
+        {% if keyn_user %}
+          <div class="user-pill">
+            <span class="status-dot"></span>
+            <span class="user-name">{{ keyn_user.username }}</span>
+          </div>
+          <a href="/logout" class="btn btn-outline small">Logout</a>
+        {% else %}
+          <a href="/login" class="btn small">Login</a>
+        {% endif %}
+        <button class="theme-toggle" aria-label="Toggle theme">
+          <span class="sun-icon">☀️</span>
+          <span class="moon-icon">🌙</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-wrapper">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p>© {{ current_year }} KeyN Authentication • Secure, Fast, Unified</p>
+      <div class="footer-links">
+        <a href="https://auth-keyn.bynolo.ca/login">Auth</a>
+        <a href="https://auth-keyn.bynolo.ca/sessions">Sessions</a>
+        <a href="https://auth-keyn.bynolo.ca/authorizations">Apps</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/theme.js') }}?v={{ cache_version }}"></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      window.themeManager = new ThemeManager();
+    });
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

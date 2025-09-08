@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+{% block title %}Passkeys - KeyN{% endblock %}
+{% block containerType %}<div class="container-lg">{% endblock %}
+{% block content %}
+<div class="card" style="max-width:960px;">
+  <div class="logo-container" style="margin-bottom:10px;">
+    <h1 style="margin-bottom:4px;">Passkeys</h1>
+    <p class="subtitle" style="margin-bottom:0;">Passwordless, phishing‑resistant authentication</p>
+  </div>
+
+  <div class="alert" id="pk-global-msg" style="display:none;"></div>
+
+  <div class="form-group" style="margin-top:10px;">
+    <button class="btn" id="add-passkey-btn"><i class="fas fa-fingerprint"></i>&nbsp;Add New Passkey</button>
+    <button class="btn btn-outline" id="refresh-passkeys" style="margin-left:8px;">Refresh</button>
+  </div>
+
+  <div id="passkeys-list-wrapper" style="margin-top:25px;">
+    {% if passkeys %}
+    <table class="sessions-table" id="passkeys-table">
+      <thead>
+        <tr>
+          <th>Label</th>
+          <th>Created</th>
+          <th>Last Used</th>
+          <th style="width:120px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pk in passkeys %}
+        <tr data-id="{{ pk.id }}">
+          <td>
+            <span class="pk-name" data-field="name">{{ pk.friendly_name or 'Passkey' }}</span>
+            <button class="mini-btn rename" type="button" data-action="rename" title="Rename">✎</button>
+            <br><span class="timestamp">{{ pk.credential_id[:18] }}…</span>
+          </td>
+          <td class="timestamp">{{ pk.created_at }}</td>
+          <td class="timestamp">{{ pk.last_used or '—' }}</td>
+          <td><button class="revoke-btn" data-action="delete">Delete</button></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-state-icon">🔐</div>
+        <p>No passkeys yet. Add one to enable passwordless sign in.</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <a href="{{ url_for('auth.profile') }}" class="back-link">← Back to Profile</a>
+</div>
+{% endblock %}
+
+{% block additional_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" defer></script>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+(function(){
+  function b64urlToArrayBuffer(b64url){
+    const pad='='.repeat((4 - b64url.length % 4) % 4);
+    const str=(b64url+pad).replace(/-/g,'+').replace(/_/g,'/');
+    const bytes=Uint8Array.from(atob(str), c=>c.charCodeAt(0));
+    return bytes.buffer;
+  }
+  function arrayBufferToB64url(buf){
+    const bytes=new Uint8Array(buf); let s='';
+    for(const b of bytes) s+=String.fromCharCode(b);
+    return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  }
+  const addBtn=document.getElementById('add-passkey-btn');
+  const refreshBtn=document.getElementById('refresh-passkeys');
+  const msg=document.getElementById('pk-global-msg');
+  const table=document.getElementById('passkeys-table');
+
+  function setMsg(text,type='info'){
+    if(!msg) return; msg.style.display='block'; msg.textContent=text;
+    msg.className='alert '+(type==='error'?'alert-error':'alert-success');
+  }
+
+  async function refresh(){
+    try {
+      const r=await fetch('/api/user/passkeys');
+      if(!r.ok) throw new Error('Failed loading passkeys');
+      const data=await r.json();
+      // Simple refresh: reload page
+      window.location.reload();
+    } catch(e){ setMsg(e.message,'error'); }
+  }
+  async function add(){
+    if(!('credentials' in navigator) || !window.PublicKeyCredential){
+      return setMsg('Passkeys not supported in this browser.','error');
+    }
+    setMsg('Requesting registration options...');
+    try {
+      const optResp=await fetch('/api/passkeys/options/register',{method:'POST'});
+      const opts=await optResp.json();
+      if(!optResp.ok) throw new Error(opts.error||'Failed to get options');
+      const pub=opts.publicKey;
+      pub.challenge=b64urlToArrayBuffer(pub.challenge);
+      pub.user.id=b64urlToArrayBuffer(pub.user.id);
+      if(Array.isArray(pub.excludeCredentials)){
+        pub.excludeCredentials=pub.excludeCredentials.map(c=>({...c,id:b64urlToArrayBuffer(c.id)}));
+      }
+      const cred=await navigator.credentials.create({publicKey: pub});
+      if(!cred) throw new Error('No credential created');
+      function guessPasskeyName(){
+        const ua = navigator.userAgent;
+        let device='Device';
+        if(/iPhone/i.test(ua)) device='iPhone';
+        else if(/iPad/i.test(ua)) device='iPad';
+        else if(/Macintosh|Mac OS X/.test(ua)) device='Mac';
+        else if(/Windows NT/.test(ua)) device='Windows PC';
+        else if(/Android/.test(ua)) device='Android';
+        else if(/Linux/.test(ua)) device='Linux';
+        let browser='Browser';
+        if(/Edg\//.test(ua)) browser='Edge';
+        else if(/Chrome\//.test(ua) && !/Edg\//.test(ua) && !/OPR\//.test(ua)) browser='Chrome';
+        else if(/Safari\//.test(ua) && /Version\//.test(ua)) browser='Safari';
+        else if(/Firefox\//.test(ua)) browser='Firefox';
+        else if(/OPR\//.test(ua)) browser='Opera';
+        return device + ' ' + browser;
+      }
+      const regData={
+        id:cred.id,
+        rawId:arrayBufferToB64url(cred.rawId),
+        type:cred.type,
+        response:{
+          attestationObject:arrayBufferToB64url(cred.response.attestationObject),
+          clientDataJSON:arrayBufferToB64url(cred.response.clientDataJSON),
+          transports: cred.response.getTransports ? cred.response.getTransports() : []
+        },
+  friendly_name: (prompt('Optional name for this passkey (e.g. "MacBook Safari"):', guessPasskeyName()) || '').slice(0,60)
+      };
+      setMsg('Verifying credential...');
+      const verify=await fetch('/api/passkeys/register',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(regData)});
+      const vj=await verify.json();
+      if(!verify.ok || !vj.success) throw new Error(vj.error||'Registration failed');
+      setMsg('Passkey added! Reloading...');
+      setTimeout(()=>window.location.reload(),900);
+    } catch(e){ setMsg(e.message,'error'); }
+  }
+  async function del(id,row){
+    if(!confirm('Delete this passkey?')) return;
+    try {
+      const r=await fetch(`/api/user/passkeys/${id}`,{method:'DELETE'});
+      const j=await r.json();
+      if(!r.ok || !j.success) throw new Error(j.error||'Delete failed');
+      setMsg('Passkey deleted.');
+      row.remove();
+      if(table && table.tBodies[0].rows.length===0) window.location.reload();
+    } catch(e){ setMsg(e.message,'error'); }
+  }
+  if(addBtn) addBtn.addEventListener('click', add);
+  if(refreshBtn) refreshBtn.addEventListener('click', refresh);
+  function enterRename(tr){
+    const nameSpan = tr.querySelector('.pk-name');
+    if(!nameSpan || tr.querySelector('input.pk-rename')) return;
+    const current = nameSpan.textContent.trim();
+    const input = document.createElement('input');
+    input.type='text';
+    input.value=current;
+    input.maxLength=60;
+    input.className='pk-rename';
+    input.style.marginRight='6px';
+    nameSpan.replaceWith(input);
+    input.focus();
+    const saveBtn=document.createElement('button');
+    saveBtn.textContent='Save'; saveBtn.type='button'; saveBtn.className='mini-btn save';
+    const cancelBtn=document.createElement('button');
+    cancelBtn.textContent='✕'; cancelBtn.type='button'; cancelBtn.className='mini-btn cancel';
+    const cell = input.parentElement;
+    cell.insertBefore(saveBtn, input.nextSibling);
+    cell.insertBefore(cancelBtn, saveBtn.nextSibling);
+    function restore(text){
+      saveBtn.remove(); cancelBtn.remove();
+      const span=document.createElement('span'); span.className='pk-name'; span.dataset.field='name'; span.textContent=text;
+      input.replaceWith(span);
+      const renameBtn = cell.querySelector('button.rename');
+      if(!renameBtn){
+        const rb=document.createElement('button'); rb.className='mini-btn rename'; rb.type='button'; rb.dataset.action='rename'; rb.textContent='✎';
+        cell.insertBefore(rb, span.nextSibling);
+      }
+    }
+    cancelBtn.addEventListener('click', ()=>restore(current));
+    saveBtn.addEventListener('click', async ()=>{
+      const newName = input.value.trim() || 'Passkey';
+      try {
+        const id=tr.getAttribute('data-id');
+        const r=await fetch(`/api/user/passkeys/${id}`,{method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({friendly_name:newName})});
+        const j=await r.json();
+        if(!r.ok || !j.success) throw new Error(j.error||'Rename failed');
+        restore(j.credential.friendly_name);
+        setMsg('Passkey renamed.');
+      } catch(e){ setMsg(e.message,'error'); }
+    });
+    input.addEventListener('keydown', e=>{ if(e.key==='Enter'){ saveBtn.click(); } else if(e.key==='Escape'){ cancelBtn.click(); } });
+  }
+
+  if(table){
+    table.addEventListener('click', e=>{
+      if(e.target.matches('button[data-action="delete"]')){
+        const tr=e.target.closest('tr');
+        del(tr.getAttribute('data-id'), tr);
+      } else if(e.target.matches('button[data-action="rename"], .mini-btn.rename')){
+        const tr=e.target.closest('tr');
+        enterRename(tr);
+      }
+    });
+  }
+})();
+</script>
+<style>
+  .mini-btn { background: var(--card-bg); border:1px solid var(--border-color); color: var(--text-color); padding:2px 6px; font-size:11px; border-radius:6px; cursor:pointer; margin-left:4px; }
+  .mini-btn:hover { background: var(--primary-color); color:#fff; }
+  .pk-rename { padding:4px 6px; border:1px solid var(--border-color); border-radius:6px; font-size:12px; }
+</style>
+{% endblock %}

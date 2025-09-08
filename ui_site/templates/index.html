@@ -1,124 +1,92 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KeyN – Unified Authentication</title>
-  
-  <!-- Immediate theme application to prevent flash -->
-  <script>
-    (function() {
-      // Check URL parameter first
-      const urlParams = new URLSearchParams(window.location.search);
-      const urlTheme = urlParams.get('theme');
-      
-      if (urlTheme && (urlTheme === 'light' || urlTheme === 'dark')) {
-        document.documentElement.setAttribute('data-theme', urlTheme);
-        localStorage.setItem('keyn-theme', urlTheme);
-      } else {
-        // Check localStorage
-        const savedTheme = localStorage.getItem('keyn-theme');
-        if (savedTheme) {
-          document.documentElement.setAttribute('data-theme', savedTheme);
-        } else {
-          // Default to system preference
-          const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          document.documentElement.setAttribute('data-theme', systemPrefersDark ? 'dark' : 'light');
-        }
-      }
-    })();
-  </script>
-  
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/ui.css') }}?v={{ cache_version }}">
-  
-  <!-- Favicon with theme support -->
-  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logos/favicon-light.svg') }}?v={{ cache_version }}" media="(prefers-color-scheme: light)">
-  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logos/favicon-dark.svg') }}?v={{ cache_version }}" media="(prefers-color-scheme: dark)">
-  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logos/favicon-light.svg') }}?v={{ cache_version }}">
-  
-  <!-- Theme color for mobile browsers -->
-  <meta name="theme-color" content="#2563eb">
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <img src="{{ url_for('static', filename='logos/light-mode-keyn-logo.svg') }}" 
-           alt="KeyN Logo" class="logo logo-light">
-      <img src="{{ url_for('static', filename='logos/dark-mode-keyn-logo.svg') }}" 
-           alt="KeyN Logo" class="logo logo-dark">
-      <h1>KeyN</h1>
-      <p class="tagline">Keep it simple. Keep it KeyN.</p>
+{% extends 'base.html' %}
+{% block title %}KeyN – Unified Authentication{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="hero-text">
+    <h1>Unified Authentication for Your Ecosystem</h1>
+    <p class="lead">KeyN lets users login once and access everything. Secure sessions, passkeys, app authorizations, and real-time security controls – all in one place.</p>
+    <div class="cta-row">
+      {% if keyn_user %}
+        <a href="/account" class="btn btn-success">Go to Account</a>
+        <a href="https://auth-keyn.bynolo.ca/profile" class="btn btn-outline">Open Profile</a>
+      {% else %}
+        <a href="/login" class="btn">Login</a>
+        <a href="https://auth-keyn.bynolo.ca/register" class="btn btn-outline">Create Account</a>
+      {% endif %}
+      <a href="https://demo-keyn.bynolo.ca" class="btn btn-success">Live Demo</a>
     </div>
-    
-    <div class="section">
-      <h2>🚀 Live Demo</h2>
-      <p>Try KeyN's unified authentication system with our interactive demo.</p>
-  <a href="https://demo-keyn.bynolo.ca" class="btn btn-success">Try KeyN Demo</a>
-    </div>
-    
-    <div class="section">
-      <h2>🔗 Authentication</h2>
-      <p>Access your KeyN account and manage your authentication settings.</p>
-  <a href="https://auth-keyn.bynolo.ca/login" class="btn">Sign In</a>
-  <a href="https://auth-keyn.bynolo.ca/register" class="btn">Create Account</a>
-    </div>
-    
-    <div class="section">
-      <h2>⚙️ Account Management</h2>
-      <p>Manage your active sessions and authorized applications.</p>
-  <a href="https://auth-keyn.bynolo.ca/sessions" class="btn btn-outline">Manage Sessions</a>
-  <a href="https://auth-keyn.bynolo.ca/authorizations" class="btn btn-outline">Authorized Apps</a>
-    </div>
-    
-    <div class="section">
-      <h2>📖 About KeyN</h2>
-      <p>KeyN is a centralized authentication system that provides secure single sign-on (SSO) access to all your connected applications.</p>
-      
-      <div class="features">
-        <h3>Key Features</h3>
-        <ul>
-          <li>Single Sign-On (SSO) across all connected applications</li>
-          <li>Secure JWT-based authentication</li>
-          <li>Session management and monitoring</li>
-          <li>Multi-factor authentication support</li>
-          <li>Admin security controls and IP banning</li>
-          <li>Real-time login attempt monitoring</li>
-        </ul>
-      </div>
-    </div>
-    
-    <div class="section">
-      <h2>🔌 Connected Applications</h2>
-      <div class="service-grid">
-        <div class="service-card">
-          <h3>Vinyl Vote</h3>
-          <p>Album rating and music discovery platform</p>
-          <span class="status status-pending">Pending</span>
-        </div>
-        <div class="service-card">
-          <h3>SideQuest</h3>
-          <p>Challenge and quest management system</p>
-          <span class="status status-pending">Pending</span>
-        </div>
-        <div class="service-card">
-          <h3>More Coming Soon</h3>
-          <p>Additional applications will be integrated with KeyN</p>
-          <span class="status status-pending">Coming Soon</span>
-        </div>
-      </div>
-    </div>
-    
-    <div class="footer">
-      <p>KeyN Authentication System - Secure, Fast, Unified</p>
+    {% if keyn_user %}<p class="muted small" style="margin-top:12px;">Signed in as {{ keyn_user.username }}</p>{% endif %}
+  </div>
+  <div class="hero-aside">
+    <div class="stat-grid">
+      <div class="stat"><strong>Single Sign-On</strong><span>One login, many apps</span></div>
+      <div class="stat"><strong>Passkey Ready</strong><span>Passwordless support</span></div>
+      <div class="stat"><strong>Session Control</strong><span>Real-time revocation</span></div>
+      <div class="stat"><strong>Security Logs</strong><span>Monitor activity</span></div>
     </div>
   </div>
-  
-  <script src="{{ url_for('static', filename='js/theme.js') }}?v={{ cache_version }}"></script>
-  <script>
-    // Initialize theme manager after DOM is loaded
-    window.addEventListener('DOMContentLoaded', function() {
-      window.themeManager = new ThemeManager();
-    });
-  </script>
-</body>
-</html>
+</section>
+
+<section class="section alt">
+  <h2>Platform Features</h2>
+  <div class="feature-grid">
+    <div class="f-card">
+      <h3>SSO Core</h3>
+      <p>Centralized authentication across all connected applications with secure token flow and refresh rotation.</p>
+    </div>
+    <div class="f-card">
+      <h3>Session Management</h3>
+      <p>Users can view and revoke active sessions instantly – improving account safety and transparency.</p>
+    </div>
+    <div class="f-card">
+      <h3>App Authorizations</h3>
+      <p>Granular control over which client applications have access, and what scopes they can use.</p>
+    </div>
+    <div class="f-card">
+      <h3>Passkey Support</h3>
+      <p>Modern WebAuthn passkeys for seamless, phishing-resistant login experiences.</p>
+    </div>
+    <div class="f-card">
+      <h3>Security Controls</h3>
+      <p>Admin IP/device banning, rate limiting, and login attempt monitoring built‑in.</p>
+    </div>
+    <div class="f-card">
+      <h3>Email Workflows</h3>
+      <p>Verification, password reset, and username recovery flows for a complete account lifecycle.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <h2>Connected Applications</h2>
+  <div class="service-grid">
+    <div class="service-card">
+      <h3>Vinyl Vote</h3>
+      <p>Album rating & music discovery</p>
+      <span class="status status-pending">Pending</span>
+    </div>
+    <div class="service-card">
+      <h3>SideQuest</h3>
+      <p>Quest & challenge system</p>
+      <span class="status status-pending">Pending</span>
+    </div>
+    <div class="service-card">
+      <h3>More Coming</h3>
+      <p>Additional integrations soon</p>
+      <span class="status status-pending">Soon</span>
+    </div>
+  </div>
+</section>
+
+<section class="section alt">
+  <h2>Why KeyN?</h2>
+  <ul class="checklist">
+    <li>Unified login experience across projects</li>
+    <li>Secure JWT & refresh token rotation</li>
+    <li>Real-time session & authorization management</li>
+    <li>Passkey passwordless authentication support</li>
+    <li>Admin oversight & security enforcement</li>
+    <li>Modern dark / light adaptive UI</li>
+  </ul>
+</section>
+{% endblock %}
