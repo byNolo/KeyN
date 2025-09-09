@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Terms of Use - {{ BRAND_LOCKUP }}{% endblock %}
+{% block content %}
+<div class="legal-page">
+<h1>Terms of Use</h1>
+<p class="legal-meta">Last updated: {{ current_year }}</p>
+<h3>1. Acceptance</h3>
+<p>By accessing or using the {{ BRAND_PRODUCT }} authentication services (the "Service"), you agree to these Terms of Use.</p>
+<h3>2. Description</h3>
+<p>{{ BRAND_PRODUCT }} provides unified authentication, session management, and security features for connected applications within the {{ BRAND_OWNER }} ecosystem.</p>
+<h3>3. Accounts</h3>
+<p>You are responsible for safeguarding your credentials. You must promptly notify us of any unauthorized use.</p>
+<h3>4. Acceptable Use</h3>
+<ul>
+  <li>No misuse, probing, or disruption of the Service.</li>
+  <li>No attempting to access other user accounts.</li>
+  <li>No reverse engineering except as permitted by law.</li>
+</ul>
+<h3>5. Data</h3>
+<p>Authentication data (usernames, emails, hashed passwords, passkeys, tokens) is processed solely to provide secure access control.</p>
+<h3>6. Termination</h3>
+<p>We may suspend or revoke access for violation of these Terms or security risk.</p>
+<h3>7. Disclaimer</h3>
+<p>The Service is provided "as is" without warranties of any kind.</p>
+<h3>8. Changes</h3>
+<p>We may update these Terms. Continued use after changes constitutes acceptance.</p>
+<h3>9. Contact</h3>
+<p>Questions: <a href="mailto:support@bynolo.ca">support@bynolo.ca</a></p>
+</div>
+{% endblock %}

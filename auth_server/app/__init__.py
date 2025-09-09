@@ -13,6 +13,10 @@ db = SQLAlchemy()
 login_manager = LoginManager()
 mail = Mail()
 
+BRAND_PRODUCT = "KeyN"
+BRAND_OWNER = "byNolo"  # stylized: lowercase b, uppercase N
+BRAND_LOCKUP = f"{BRAND_PRODUCT} – {BRAND_OWNER}"
+
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -53,6 +57,12 @@ def create_app():
     # Add cache busting version to template context
     @app.context_processor
     def inject_cache_version():
-        return dict(cache_version=app.config['CACHE_VERSION'])
+        return dict(
+            cache_version=app.config['CACHE_VERSION'],
+            BRAND_PRODUCT=BRAND_PRODUCT,
+            BRAND_OWNER=BRAND_OWNER,
+            BRAND_LOCKUP=BRAND_LOCKUP,
+            current_year=time.strftime('%Y')
+        )
 
     return app

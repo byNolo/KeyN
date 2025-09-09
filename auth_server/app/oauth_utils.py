@@ -127,12 +127,23 @@ class ScopeManager:
 
 class ClientManager:
     """Manages client applications"""
+
+    @staticmethod
+    def generate_client_credentials():
+        """Generate a new (client_id, client_secret) pair.
+
+        Returns:
+            tuple: (client_id, client_secret)
+        """
+        client_id = secrets.token_urlsafe(32)
+        client_secret = secrets.token_urlsafe(64)
+        return client_id, client_secret
     
     @staticmethod
     def create_client(name, description, website_url, redirect_uris, created_by_user_id):
         """Create a new client application"""
-        client_id = secrets.token_urlsafe(32)
-        client_secret = secrets.token_urlsafe(64)
+        # Reuse the shared credential generator for consistency
+        client_id, client_secret = ClientManager.generate_client_credentials()
         
         client = ClientApplication(
             client_id=client_id,

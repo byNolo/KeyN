@@ -284,10 +284,20 @@ def revoke_session(session_id):
     return jsonify({"status": "revoked"})
 
 from .auth_utils import send_verification_email, verify_email_token
+from . import BRAND_PRODUCT, BRAND_OWNER, BRAND_LOCKUP
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from flask_mail import Message
 def get_serializer():
     return URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
+
+# --------- Legal / Policy Pages ---------
+@auth_bp.route('/terms')
+def terms_of_use():
+    return render_template('terms.html')
+
+@auth_bp.route('/privacy')
+def privacy_policy():
+    return render_template('privacy.html')
 
 # Forgot Password
 @auth_bp.route("/forgot-password", methods=["GET", "POST"])
@@ -299,7 +309,7 @@ def forgot_password():
             serializer = get_serializer()
             token = serializer.dumps(user.email, salt="password-reset-salt")
             reset_url = url_for("auth.reset_password", token=token, _external=True)
-            msg = Message("KeyN Password Reset", recipients=[user.email])
+            msg = Message(f"{BRAND_PRODUCT} Password Reset – {BRAND_OWNER}", recipients=[user.email])
             msg.html = render_template("email/password_reset.html", username=user.username, link=reset_url)
             # Attach logo.png as inline image
             try:
@@ -356,7 +366,7 @@ def forgot_username():
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         if user:
-            msg = Message("KeyN Username Recovery", recipients=[user.email])
+            msg = Message(f"{BRAND_PRODUCT} Username Recovery – {BRAND_OWNER}", recipients=[user.email])
             msg.html = render_template("email/username_reminder.html", username=user.username)
             # Attach logo.png as inline image
             try:

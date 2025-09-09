@@ -15,6 +15,11 @@ Enhancements:
 app = Flask(__name__)
 app.secret_key = os.environ.get('KEYN_UI_SECRET_KEY', 'keyn-ui-dev-secret')
 
+# Branding constants (centralized)
+BRAND_PRODUCT = "KeyN"
+BRAND_OWNER = "byNolo"  # stylized: lowercase b, uppercase N
+BRAND_LOCKUP = f"{BRAND_PRODUCT} – {BRAND_OWNER}"
+
 # External service configuration
 AUTH_SERVER_URL = os.environ.get('KEYN_AUTH_SERVER_URL', 'https://auth-keyn.bynolo.ca')
 UI_SITE_URL = os.environ.get('KEYN_UI_SITE_URL', 'https://keyn.bynolo.ca')
@@ -24,7 +29,12 @@ app.config['CACHE_VERSION'] = str(int(time.time()))
 
 @app.context_processor
 def inject_cache_version():
-    return dict(cache_version=app.config['CACHE_VERSION'])
+    return dict(
+        cache_version=app.config['CACHE_VERSION'],
+        BRAND_PRODUCT=BRAND_PRODUCT,
+        BRAND_OWNER=BRAND_OWNER,
+        BRAND_LOCKUP=BRAND_LOCKUP
+    )
 
 def _validate_with_auth_server():
     """Attempt to validate current user using session token, stored token or shared cookies.
@@ -70,7 +80,10 @@ def _validate_with_auth_server():
 def inject_user():
     return {
         'keyn_user': _validate_with_auth_server(),
-        'current_year': time.strftime('%Y')
+        'current_year': time.strftime('%Y'),
+        'BRAND_PRODUCT': BRAND_PRODUCT,
+        'BRAND_OWNER': BRAND_OWNER,
+        'BRAND_LOCKUP': BRAND_LOCKUP
     }
 
 @app.route('/')
@@ -123,6 +136,14 @@ def logout():
 def api_status():
     user = _validate_with_auth_server()
     return jsonify({'authenticated': bool(user), 'user': user})
+
+@app.route('/terms')
+def terms():
+    return render_template('terms.html')
+
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
 
 if __name__ == "__main__":
     app.run(debug=False, host='0.0.0.0', port=6001)

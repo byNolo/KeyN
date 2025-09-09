@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Terms of Use – {{ BRAND_LOCKUP }}{% endblock %}
+{% block content %}
+<section class="legal-page">
+<h1>Terms of Use</h1>
+<p>Last updated: {{ current_year }}</p>
+<h3>1. Acceptance</h3>
+<p>By using the {{ BRAND_PRODUCT }} service you agree to these Terms.</p>
+<h3>2. Service</h3>
+<p>{{ BRAND_PRODUCT }} provides unified authentication and identity features for applications in the {{ BRAND_OWNER }} ecosystem.</p>
+<h3>3. Your Responsibilities</h3>
+<ul>
+<li>Maintain the confidentiality of your credentials.</li>
+<li>Report suspicious activity promptly.</li>
+<li>Use the Service lawfully; no abuse, spam, or disruption.</li>
+</ul>
+<h3>4. Security</h3>
+<p>We employ passkeys, hashed passwords, scoped tokens, device/session management, and audit logging.</p>
+<h3>5. Suspension</h3>
+<p>Accounts may be limited or terminated for violations or security risk.</p>
+<h3>6. Changes</h3>
+<p>We may update these Terms; material changes may be notified in-app.</p>
+<h3>7. Contact</h3>
+<p>support@bynolo.ca</p>
+ </section>
+{% endblock %}

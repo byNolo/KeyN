@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Email Verified - KeyN{% endblock %}
+{% block title %}Email Verified - {{ BRAND_LOCKUP }}{% endblock %}
 {% block content %}
 <div class="status-card verified">
   <div class="status-icon success">
@@ -9,10 +9,10 @@
     </div>
   </div>
   <h2 class="verified-title">🎉 Your Email is Verified!</h2>
-  <p class="subtitle">Thank you for verifying your email address.<br>You can now log in and start using KeyN.</p>
+  <p class="subtitle">Thank you for verifying your email address.<br>You can now log in and start using {{ BRAND_PRODUCT }} <span class="gradient-text">{{ BRAND_OWNER }}</span>.</p>
   <div class="info-box verified-info">
     <ul>
-      <li><strong>Welcome to KeyN!</strong> Your account is now active.</li>
+  <li><strong>Welcome to {{ BRAND_PRODUCT }} <span class="gradient-text">{{ BRAND_OWNER }}</span>!</strong> Your account is now active.</li>
       <li>Enjoy secure access to all connected apps.</li>
       <li>If you have any issues, contact support.</li>
     </ul>

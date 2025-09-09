@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}KeyN{% endblock %}</title>
+  <title>{% block title %}{{ BRAND_LOCKUP }}{% endblock %}</title>
   
   <!-- Immediate theme application to prevent flash -->
   <script>
@@ -45,7 +45,7 @@
   <meta name="theme-color" content="#2563eb">
   
   <!-- Open Graph / Social Media -->
-  <meta property="og:title" content="{% block og_title %}KeyN - Unified Authentication{% endblock %}">
+  <meta property="og:title" content="{% block og_title %}{{ BRAND_LOCKUP }} - Unified Authentication{% endblock %}">
   <meta property="og:description" content="{% block og_description %}Login once. Access everything.{% endblock %}">
   <meta property="og:type" content="website">
   
@@ -76,5 +76,14 @@
   
   <!-- Inline scripts -->
   {% block scripts %}{% endblock %}
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p>© {{ current_year }} {{ BRAND_LOCKUP }} Authentication Platform</p>
+      <div class="footer-links">
+        <a href="{{ url_for('auth.terms_of_use') }}">Terms of Use</a>
+        <a href="{{ url_for('auth.privacy_policy') }}">Privacy Policy</a>
+      </div>
+    </div>
+  </footer>
 </body>
 </html>

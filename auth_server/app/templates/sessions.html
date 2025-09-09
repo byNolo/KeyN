@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Active Sessions - KeyN{% endblock %}
+{% block title %}Active Sessions - {{ BRAND_LOCKUP }}{% endblock %}
 
 {% block containerType %}
 <div class="sessions-container">
@@ -23,14 +23,14 @@
                 <i class="fas fa-desktop"></i>
             </div>
             <h1>Active Sessions</h1>
-            <p class="sessions-subtitle">Manage devices connected to your KeyN account</p>
+            <p class="sessions-subtitle">Manage devices connected to your {{ BRAND_PRODUCT }} account <span class="gradient-text">{{ BRAND_OWNER }}</span></p>
         </div>
 
         <!-- Description -->
         <div class="sessions-description">
             <div class="description-content">
                 <i class="fas fa-info-circle"></i>
-                <p>These are all the devices and browsers currently signed in to your KeyN account. You can revoke access for any session you don't recognize.</p>
+                <p>These are all the devices and browsers currently signed in to your {{ BRAND_PRODUCT }} account. You can revoke access for any session you don't recognize.</p>
             </div>
         </div>
 
@@ -118,7 +118,7 @@
           <span>Back to Profile</span>
         </a>
             </div>
-            <p>Powered by <strong>KeyN</strong> Authentication</p>
+            <p>Powered by <strong>{{ BRAND_LOCKUP }}</strong> Authentication</p>
         </div>
     </div>
 </div>

@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Privacy Policy - {{ BRAND_LOCKUP }}{% endblock %}
+{% block content %}
+<div class="legal-page">
+<h1>Privacy Policy</h1>
+<p class="legal-meta">Last updated: {{ current_year }}</p>
+<h3>1. Overview</h3>
+<p>This Privacy Policy explains how {{ BRAND_PRODUCT }} ("we") processes authentication-related data.</p>
+<h3>2. Data Collected</h3>
+<ul>
+  <li>Account data: username, email, hashed password, profile fields.</li>
+  <li>Security data: passkey public keys, multi-factor tokens, verification timestamps.</li>
+  <li>Operational data: IP, user agent, session + refresh token metadata for security auditing.</li>
+</ul>
+<h3>3. Purpose</h3>
+<p>Data is used exclusively for authentication, security monitoring, fraud prevention, and improving reliability.</p>
+<h3>4. Storage & Security</h3>
+<p>Passwords are hashed (never stored in plain text). Passkeys store only public key material. Access is restricted.</p>
+<h3>5. Cookies</h3>
+<p>Session cookies are scoped to authentication domains and use secure, httpOnly, and SameSite attributes where supported.</p>
+<h3>6. Sharing</h3>
+<p>We do not sell personal data. Limited data may be shared with integrated applications strictly for authentication/authorization flows.</p>
+<h3>7. Retention</h3>
+<p>Session + token records may be purged after expiration or security review. Account data persists until deletion request.</p>
+<h3>8. Your Rights</h3>
+<p>You may request account deletion or email change. Verification is required to process such requests.</p>
+<h3>9. Changes</h3>
+<p>We may update this Policy. Material changes will be communicated via login banner or email.</p>
+<h3>10. Contact</h3>
+<p>Questions: <a href="mailto:privacy@bynolo.ca">privacy@bynolo.ca</a></p>
+</div>
+{% endblock %}

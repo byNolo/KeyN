@@ -155,6 +155,27 @@ body {
   display: none;
 }
 
+/* Gradient text utility */
+.gradient-text { background-image: linear-gradient(90deg,#34d399,#059669); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; font-weight:700; }
+[data-theme="dark"] .gradient-text { background-image: linear-gradient(90deg,#6ee7b7,#10b981); }
+/* brand-owner-badge kept for backwards compatibility */
+.brand-owner-badge { background-image: linear-gradient(90deg,#34d399,#059669); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; font-weight:700; }
+[data-theme="dark"] .brand-owner-badge { background-image: linear-gradient(90deg,#6ee7b7,#10b981); }
+
+/* Footer & Legal Pages */
+.site-footer { margin-top:40px; padding:34px 0 50px; text-align:center; font-size:13px; color: var(--secondary-color); }
+.footer-inner { max-width:900px; margin:0 auto; padding:0 20px; }
+.footer-links { display:flex; gap:18px; justify-content:center; flex-wrap:wrap; margin-top:12px; }
+.footer-links a { text-decoration:none; color: var(--primary-color); font-weight:500; }
+.footer-links a:hover { text-decoration:underline; }
+.legal-page { max-width:820px; margin:0 auto; }
+.legal-page h1 { font-size:2.1rem; line-height:1.15; margin:0 0 6px; }
+.legal-page h3 { margin-top:28px; margin-bottom:8px; font-size:0.95rem; text-transform:uppercase; letter-spacing:.55px; color: var(--primary-color); }
+.legal-meta { font-size:.75rem; opacity:.65; margin-bottom:26px; letter-spacing:.5px; }
+.legal-page ul { padding-left:20px; line-height:1.5; }
+.legal-page li { margin:4px 0; }
+
+
 [data-theme="dark"] .logo-light {
   display: none;
 }

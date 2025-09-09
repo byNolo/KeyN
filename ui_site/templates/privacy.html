@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Privacy Policy – {{ BRAND_LOCKUP }}{% endblock %}
+{% block content %}
+<section class="legal-page">
+<h1>Privacy Policy</h1>
+<p>Last updated: {{ current_year }}</p>
+<h3>1. Overview</h3>
+<p>This policy explains how {{ BRAND_PRODUCT }} processes authentication-related data.</p>
+<h3>2. Data We Collect</h3>
+<ul>
+<li>Account: username, email, optional profile data, hashed password.</li>
+<li>Security: passkey public keys, MFA artifacts, verification timestamps.</li>
+<li>Operational: IP address, user agent, token/session metadata.</li>
+</ul>
+<h3>3. Purpose</h3>
+<p>Provide secure sign‑in, prevent fraud, monitor abuse, and improve reliability.</p>
+<h3>4. Protection</h3>
+<p>Passwords hashed; passkeys store only public keys; least‑privilege internal access.</p>
+<h3>5. Cookies</h3>
+<p>Scoped session cookies with httpOnly, SameSite, and Secure (where supported).</p>
+<h3>6. Sharing</h3>
+<p>No sale of personal data. Limited sharing only with integrated apps for auth.</p>
+<h3>7. Retention</h3>
+<p>Tokens/sessions cleaned after expiry; account data retained until deletion request.</p>
+<h3>8. Your Choices</h3>
+<p>Request account deletion or email change via support; verification required.</p>
+<h3>9. Updates</h3>
+<p>Policy may evolve; material updates may appear as banner or email.</p>
+<h3>10. Contact</h3>
+<p>privacy@bynolo.ca</p>
+ </section>
+{% endblock %}

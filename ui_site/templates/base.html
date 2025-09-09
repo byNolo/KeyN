@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}KeyN – Unified Authentication{% endblock %}</title>
+  <title>{% block title %}{{ BRAND_LOCKUP }} – Unified Authentication{% endblock %}</title>
   <script>
     (function() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -31,10 +31,10 @@
 <body>
   <header class="site-header">
     <div class="nav-inner">
-      <a href="/" class="brand" aria-label="KeyN Home">
-        <img src="{{ url_for('static', filename='logos/light-mode-keyn-logo.svg') }}" alt="KeyN Logo" class="logo logo-light">
-        <img src="{{ url_for('static', filename='logos/dark-mode-keyn-logo.svg') }}" alt="KeyN Logo" class="logo logo-dark">
-        <span class="brand-name">KeyN</span>
+      <a href="/" class="brand" aria-label="{{ BRAND_PRODUCT }} Home">
+        <img src="{{ url_for('static', filename='logos/light-mode-keyn-logo.svg') }}" alt="{{ BRAND_PRODUCT }} Logo" class="logo logo-light">
+        <img src="{{ url_for('static', filename='logos/dark-mode-keyn-logo.svg') }}" alt="{{ BRAND_PRODUCT }} Logo" class="logo logo-dark">
+  <span class="brand-name">{{ BRAND_PRODUCT }} <span class="gradient-text">{{ BRAND_OWNER }}</span></span>
       </a>
       <nav class="main-nav">
         <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}">Home</a>
@@ -66,11 +66,13 @@
 
   <footer class="site-footer">
     <div class="footer-inner">
-      <p>© {{ current_year }} KeyN Authentication • Secure, Fast, Unified</p>
+      <div class="footer-sep"></div>
+      <p class="legal-inline">© {{ current_year }} {{ BRAND_LOCKUP }} • Secure, Fast, Unified · <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p>
       <div class="footer-links">
         <a href="https://auth-keyn.bynolo.ca/login">Auth</a>
         <a href="https://auth-keyn.bynolo.ca/sessions">Sessions</a>
         <a href="https://auth-keyn.bynolo.ca/authorizations">Apps</a>
+        <a href="https://auth-keyn.bynolo.ca/register">Register</a>
       </div>
     </div>
   </footer>

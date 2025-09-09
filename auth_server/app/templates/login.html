@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Login - KeyN{% endblock %}
+{% block title %}Login - {{ BRAND_LOCKUP }}{% endblock %}
 
 {% block content %}
 <div class="logo-container">
@@ -11,7 +11,7 @@
 </div>
 
 <h2>Welcome back</h2>
-<p class="subtitle">Sign in to your KeyN account</p>
+<p class="subtitle">Sign in to your {{ BRAND_PRODUCT }} account <span class="gradient-text">{{ BRAND_OWNER }}</span></p>
 
 <form method="POST">
   {{ form.hidden_tag() }}

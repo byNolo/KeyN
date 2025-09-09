@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
-{% block title %}KeyN – Unified Authentication{% endblock %}
+{% block title %}{{ BRAND_LOCKUP }} – Unified Authentication{% endblock %}
 {% block content %}
 <section class="hero">
   <div class="hero-text">
-    <h1>Unified Authentication for Your Ecosystem</h1>
+  <h1>Unified Authentication for Your Ecosystem <span class="gradient-text">{{ BRAND_OWNER }}</span></h1>
     <p class="lead">KeyN lets users login once and access everything. Secure sessions, passkeys, app authorizations, and real-time security controls – all in one place.</p>
     <div class="cta-row">
       {% if keyn_user %}

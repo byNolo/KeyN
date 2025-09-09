@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Authorized Applications - KeyN{% endblock %}
+{% block title %}Authorized Applications - {{ BRAND_LOCKUP }}{% endblock %}
 
 {% block containerType %}
 <div class="authorizations-container">
@@ -23,14 +23,14 @@
                 <i class="fas fa-shield-alt"></i>
             </div>
             <h1>Authorized Applications</h1>
-            <p class="auth-subtitle">Manage applications connected to your KeyN account</p>
+            <p class="auth-subtitle">Manage applications connected to your {{ BRAND_PRODUCT }} account <span class="gradient-text">{{ BRAND_OWNER }}</span></p>
         </div>
 
         <!-- Description -->
         <div class="auth-description">
             <div class="description-content">
                 <i class="fas fa-info-circle"></i>
-                <p>These applications have been granted access to your KeyN account data. You can revoke access for any application at any time.</p>
+                <p>These applications have been granted access to your {{ BRAND_PRODUCT }} account data. You can revoke access for any application at any time.</p>
             </div>
         </div>
 
@@ -52,7 +52,7 @@
           <span>Back to Profile</span>
         </a>
       </div>
-      <p>Powered by <strong>KeyN</strong> Authentication</p>
+  <p>Powered by <strong>{{ BRAND_LOCKUP }}</strong> Authentication</p>
     </div>
     </div>
 </div>
@@ -779,7 +779,7 @@ async function loadAuthorizations() {
                         <i class="fas fa-shield-alt"></i>
                     </div>
                     <h2>No Authorized Applications</h2>
-                    <p>You haven't authorized any applications to access your KeyN account yet. When you do, they'll appear here for you to manage.</p>
+                    <p>You haven't authorized any applications to access your {{ BRAND_PRODUCT }} account yet. When you do, they'll appear here for you to manage.</p>
                 </div>
             `;
             return;

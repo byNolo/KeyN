@@ -1,13 +1,13 @@
 {% extends "email/base_email.html" %}
 
-{% block title %}Admin Action Confirmation - KeyN{% endblock %}
+{% block title %}Admin Action Confirmation - {{ BRAND_LOCKUP }}{% endblock %}
 {% block email_title %}Confirm Admin Action{% endblock %}
 {% block email_subtitle %}Security verification required to proceed{% endblock %}
 
 {% block email_content %}
 <p>Hello <strong>{{ user.username }}</strong>,</p>
 
-<p>An administrative action has been requested in the KeyN authentication system that requires your confirmation:</p>
+<p>An administrative action has been requested in the {{ BRAND_PRODUCT }} authentication system that requires your confirmation:</p>
 
 <div class="info-box" style="background:#f0f9ff;border-left:4px solid #157347;padding:14px 18px;margin:22px 0;border-radius:0 8px 8px 0;">
 	<h4 style="margin:0 0 6px 0;font-size:15px;">Action Details</h4>
@@ -34,5 +34,5 @@
 {% endblock %}
 
 {% block footer_disclaimer %}
-You are receiving this email because an admin action was initiated using your KeyN administrator account. If this wasn't you, we recommend reviewing recent security activity.
+You are receiving this email because an admin action was initiated using your {{ BRAND_PRODUCT }} administrator account. If this wasn't you, we recommend reviewing recent security activity.
 {% endblock %}
