@@ -64,6 +64,10 @@
   
   <!-- JavaScript -->
   <script src="{{ url_for('static', filename='js/theme.js') }}?v={{ cache_version }}"></script>
+  {% if TURNSTILE_ENABLED and TURNSTILE_SITE_KEY %}
+  <!-- Cloudflare Turnstile script -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  {% endif %}
   <script>
     // Initialize theme manager after DOM is loaded
     window.addEventListener('DOMContentLoaded', function() {

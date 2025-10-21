@@ -1,9 +1,11 @@
-from flask import request
+from flask import request, current_app
 import hashlib
 import hmac
 import datetime
 from . import db
 from .models import User, IPBan, DeviceBan, LoginAttempt
+import requests
+from typing import Tuple, Optional
 
 def get_real_ip():
     """
@@ -158,3 +160,38 @@ def is_rate_limited(ip_address, max_attempts=5, window_minutes=15):
     """Check if IP should be rate limited based on failed attempts"""
     failed_attempts = get_failed_login_attempts(ip_address, window_minutes)
     return failed_attempts >= max_attempts
+
+
+def verify_turnstile(token: str, remoteip: Optional[str] = None) -> Tuple[bool, str]:
+    """
+    Verify Cloudflare Turnstile token.
+    Returns (is_valid, error_message)
+    If Turnstile is disabled or keys missing, returns (True, '') to avoid blocking dev.
+    """
+    try:
+        enabled = current_app.config.get('TURNSTILE_ENABLED', False)
+        secret = current_app.config.get('TURNSTILE_SECRET_KEY')
+        if not enabled or not secret:
+            return True, ''
+        if not token:
+            return False, 'Missing Turnstile token'
+        data = {'secret': secret, 'response': token}
+        if remoteip:
+            data['remoteip'] = remoteip
+        resp = requests.post('https://challenges.cloudflare.com/turnstile/v0/siteverify', data=data, timeout=5)
+        ok = False
+        err_msg = ''
+        if resp.ok:
+            j = resp.json()
+            ok = bool(j.get('success'))
+            if not ok:
+                errors = j.get('error-codes') or []
+                err_msg = ', '.join(errors) if errors else 'Verification failed'
+        else:
+            err_msg = f'Verification HTTP {resp.status_code}'
+        return ok, err_msg
+    except Exception as e:
+        # Fail-closed only if explicitly enabled; otherwise pass in dev
+        if current_app.config.get('TURNSTILE_ENABLED', False):
+            return False, str(e)
+        return True, ''

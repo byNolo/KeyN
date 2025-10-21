@@ -62,7 +62,10 @@ def create_app():
             BRAND_PRODUCT=BRAND_PRODUCT,
             BRAND_OWNER=BRAND_OWNER,
             BRAND_LOCKUP=BRAND_LOCKUP,
-            current_year=time.strftime('%Y')
+            current_year=time.strftime('%Y'),
+            TURNSTILE_SITE_KEY=app.config.get('TURNSTILE_SITE_KEY'),
+            TURNSTILE_ENABLED=app.config.get('TURNSTILE_ENABLED', False),
+            TURNSTILE_SIZE=app.config.get('TURNSTILE_SIZE', 'invisible')
         )
 
     return app

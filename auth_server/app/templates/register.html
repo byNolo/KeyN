@@ -13,7 +13,7 @@
 <h2>Create account</h2>
 <p class="subtitle">Join KeyN and access all connected apps</p>
 
-<form method="POST" action="?{% if redirect_url %}redirect={{ redirect_url }}{% endif %}">
+<form method="POST" id="register-form" action="?{% if redirect_url %}redirect={{ redirect_url }}{% endif %}">
   {{ form.hidden_tag() }}
   
   <div class="form-group">
@@ -48,10 +48,37 @@
     {% endfor %}
   </div>
   
+  {% if TURNSTILE_ENABLED and TURNSTILE_SITE_KEY %}
+    <div id="ts-register" class="cf-turnstile" data-sitekey="{{ TURNSTILE_SITE_KEY }}" data-theme="auto" data-size="{{ TURNSTILE_SIZE }}" data-appearance="{{ 'execute' if TURNSTILE_SIZE == 'invisible' else 'always' }}" data-callback="onTurnstileRegister"></div>
+  {% endif %}
   {{ form.submit(class="submit-btn") }}
 </form>
 
 <div class="link-container">
   <p>Already have an account? <a href="{{ url_for('auth.login', redirect=redirect_url) if redirect_url else url_for('auth.login') }}">Sign in here</a></p>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{% if TURNSTILE_ENABLED and TURNSTILE_SITE_KEY %}
+<script>
+  window.onTurnstileRegister = function(){
+    const form = document.getElementById('register-form');
+    if (form) form.submit();
+  };
+  const form = document.getElementById('register-form');
+  if (form && '{{ TURNSTILE_SIZE }}' === 'invisible'){
+    form.addEventListener('submit', function(e){
+      const tokenInput = document.querySelector('input[name="cf-turnstile-response"]');
+      if (!tokenInput || !tokenInput.value){
+        e.preventDefault();
+        const exec = () => {
+          try { window.turnstile.execute('#ts-register'); } catch(_){ setTimeout(exec, 100); }
+        };
+        if (window.turnstile) exec(); else setTimeout(exec, 100);
+      }
+    });
+  }
+</script>
+{% endif %}
 {% endblock %}

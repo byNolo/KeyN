@@ -13,7 +13,7 @@
 <h2>Welcome back</h2>
 <p class="subtitle">Sign in to your {{ BRAND_PRODUCT }} account <span class="gradient-text">{{ BRAND_OWNER }}</span></p>
 
-<form method="POST">
+<form method="POST" id="login-form">
   {{ form.hidden_tag() }}
   
   <div class="form-group">
@@ -32,6 +32,9 @@
     {% endfor %}
   </div>
   
+  {% if TURNSTILE_ENABLED and TURNSTILE_SITE_KEY %}
+    <div id="ts-login" class="cf-turnstile" data-sitekey="{{ TURNSTILE_SITE_KEY }}" data-theme="auto" data-size="{{ TURNSTILE_SIZE }}" data-appearance="{{ 'execute' if TURNSTILE_SIZE == 'invisible' else 'always' }}" data-callback="onTurnstileLogin"></div>
+  {% endif %}
   {{ form.submit(class="submit-btn") }}
 </form>
 
@@ -53,6 +56,25 @@
 (function(){
   if (window._passkeyLoginInit) return; // prevent duplicate definition
   window._passkeyLoginInit = true;
+
+  // Turnstile login integration (invisible mode friendly)
+  window.onTurnstileLogin = function(){
+    const form = document.getElementById('login-form');
+    if (form) form.submit();
+  };
+  const loginForm = document.getElementById('login-form');
+  if (loginForm && '{{ TURNSTILE_SIZE }}' === 'invisible'){
+    loginForm.addEventListener('submit', function(e){
+      const tokenInput = document.querySelector('input[name="cf-turnstile-response"]');
+      if (!tokenInput || !tokenInput.value){
+        e.preventDefault();
+        const exec = () => {
+          try { window.turnstile.execute('#ts-login'); } catch(_){ setTimeout(exec, 100); }
+        };
+        if (window.turnstile) exec(); else setTimeout(exec, 100);
+      }
+    });
+  }
 
   function b64urlToArrayBuffer(b64url){
     const pad = '='.repeat((4 - b64url.length % 4) % 4);

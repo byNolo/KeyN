@@ -40,3 +40,15 @@ class Config:
 
     # Passkey / WebAuthn debug (exposes detailed errors if True)
     PASSKEY_DEBUG = os.environ.get("PASSKEY_DEBUG", "False") == "True"
+
+    # Cloudflare Turnstile (human verification)
+    # Enable by setting both keys; can be toggled explicitly with TURNSTILE_ENABLED
+    TURNSTILE_SITE_KEY = os.environ.get("TURNSTILE_SITE_KEY")
+    TURNSTILE_SECRET_KEY = os.environ.get("TURNSTILE_SECRET_KEY")
+    TURNSTILE_SIZE = os.environ.get("TURNSTILE_SIZE", "invisible")  # invisible | normal | compact
+    TURNSTILE_ENABLED = os.environ.get("TURNSTILE_ENABLED")
+    if TURNSTILE_ENABLED is None:
+        # Auto-enable when both keys are present
+        TURNSTILE_ENABLED = bool(TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY)
+    else:
+        TURNSTILE_ENABLED = TURNSTILE_ENABLED == "True"

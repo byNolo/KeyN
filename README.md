@@ -215,6 +215,18 @@ COOKIE_DOMAIN=.yourdomain.com
 CORS_ORIGINS=https://app1.yourdomain.com,https://app2.yourdomain.com
 ```
 
+### Turnstile Human Verification (optional)
+To enable Cloudflare Turnstile on login, registration, and recovery forms, set:
+
+```bash
+TURNSTILE_SITE_KEY=your-turnstile-site-key
+TURNSTILE_SECRET_KEY=your-turnstile-secret-key
+# Optional explicit toggle (auto-enabled when both keys are present)
+TURNSTILE_ENABLED=True
+```
+
+When enabled, a Turnstile widget is rendered in forms and server-side verification is enforced.
+
 ---
 
 ## Deployment

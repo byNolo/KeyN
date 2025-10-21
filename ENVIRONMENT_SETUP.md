@@ -39,6 +39,20 @@ FLASK_SECRET_KEY=your-super-secure-random-key-here
 
 # Demo client secret key  
 DEMO_CLIENT_SECRET_KEY=another-secure-random-key-here
+
+## Human Verification (Cloudflare Turnstile)
+### Recommended in production to block bots on auth forms
+```bash
+# Turnstile site and secret keys from Cloudflare dashboard
+TURNSTILE_SITE_KEY=your-turnstile-site-key
+TURNSTILE_SECRET_KEY=your-turnstile-secret-key
+
+# Optional override: explicitly enable/disable (default auto-enables if both keys set)
+TURNSTILE_ENABLED=True
+
+# Optional size: invisible | normal | compact (default: invisible)
+TURNSTILE_SIZE=invisible
+```
 ```
 
 ⚠️ **Never use the default fallback values in production!**

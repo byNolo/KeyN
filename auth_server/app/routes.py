@@ -9,7 +9,8 @@ from wtforms.validators import DataRequired, EqualTo
 from . import db, login_manager
 from .security_utils import (
     get_real_ip, generate_device_fingerprint, is_ip_banned, is_device_banned,
-    log_login_attempt, is_rate_limited, ban_ip, ban_device, unban_ip, unban_device
+    log_login_attempt, is_rate_limited, ban_ip, ban_device, unban_ip, unban_device,
+    verify_turnstile
 )
 from .auth_utils import admin_required, send_admin_action_email
 from .oauth_utils import ScopeManager, ClientManager, AuthorizationManager
@@ -54,6 +55,13 @@ def login():
     
     form = LoginForm()
     if form.validate_on_submit():
+        # Cloudflare Turnstile verification if enabled
+        if current_app.config.get('TURNSTILE_ENABLED', False):
+            token = request.form.get('cf-turnstile-response')
+            ok, err = verify_turnstile(token, ip_address)
+            if not ok:
+                form.username.errors.append('Human verification failed. Please try again.')
+                return render_template("login.html", form=form)
         username = form.username.data
         password = form.password.data
         user = User.query.filter_by(username=username).first()
@@ -304,6 +312,13 @@ def privacy_policy():
 def forgot_password():
     form = ForgotPasswordForm()
     if form.validate_on_submit():
+        if current_app.config.get('TURNSTILE_ENABLED', False):
+            ip_address = get_real_ip()
+            token = request.form.get('cf-turnstile-response')
+            ok, err = verify_turnstile(token, ip_address)
+            if not ok:
+                form.email.errors.append('Human verification failed. Please try again.')
+                return render_template("forgot_password.html", form=form)
         user = User.query.filter_by(email=form.email.data).first()
         if user:
             serializer = get_serializer()
@@ -364,6 +379,13 @@ def reset_password(token):
 def forgot_username():
     form = ForgotUsernameForm()
     if form.validate_on_submit():
+        if current_app.config.get('TURNSTILE_ENABLED', False):
+            ip_address = get_real_ip()
+            token = request.form.get('cf-turnstile-response')
+            ok, err = verify_turnstile(token, ip_address)
+            if not ok:
+                form.email.errors.append('Human verification failed. Please try again.')
+                return render_template("forgot_username.html", form=form)
         user = User.query.filter_by(email=form.email.data).first()
         if user:
             msg = Message(f"{BRAND_PRODUCT} Username Recovery – {BRAND_OWNER}", recipients=[user.email])
@@ -400,6 +422,13 @@ def register():
     form = RegisterForm()
     redirect_url = request.args.get("redirect")
     if form.validate_on_submit():
+        if current_app.config.get('TURNSTILE_ENABLED', False):
+            ip_address = get_real_ip()
+            token = request.form.get('cf-turnstile-response')
+            ok, err = verify_turnstile(token, ip_address)
+            if not ok:
+                form.username.errors.append('Human verification failed. Please try again.')
+                return render_template("register.html", form=form, redirect_url=redirect_url)
         if User.query.filter_by(username=form.username.data).first():
             form.username.errors.append("Username already exists")
         elif User.query.filter_by(email=form.email.data).first():
