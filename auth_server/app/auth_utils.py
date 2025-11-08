@@ -171,3 +171,59 @@ def send_admin_action_email(user, action_token, app, mail):
         mail.send(msg)
     except Exception as e:
         current_app.logger.error(f"Failed to send admin action email: {e}")
+
+
+def send_announcement_email(user, announcement_data, app, mail):
+    """
+    Send branded announcement email to user
+    
+    Args:
+        user: User object
+        announcement_data: dict with keys:
+            - title: Announcement title
+            - subtitle: Announcement subtitle
+            - content: HTML content (will be marked as safe)
+            - benefits: List of benefit strings
+            - cta_text: Call-to-action button text (optional)
+            - cta_link: Call-to-action button link (optional)
+        app: Flask app instance
+        mail: Flask-Mail instance
+    """
+    print(f"[EMAIL] Sending announcement to {user.email}: {announcement_data.get('title', 'Untitled')}")
+    
+    try:
+        html_body = render_template(
+            "email/announcement.html",
+            username=user.username,
+            user_email=user.email,
+            announcement_title=announcement_data.get('title', 'Important Announcement'),
+            announcement_subtitle=announcement_data.get('subtitle', ''),
+            announcement_content=announcement_data.get('content', ''),
+            benefits=announcement_data.get('benefits', []),
+            cta_text=announcement_data.get('cta_text'),
+            cta_link=announcement_data.get('cta_link')
+        )
+        
+        msg = Message(
+            subject=f"{announcement_data.get('title', 'Important Announcement')} - KeyN by byNolo",
+            recipients=[user.email],
+            html=html_body
+        )
+        
+        # Attach logo and favicon as inline images
+        for fname, cid in [('logo.png', '<logo_image>'), ('favicon.png', '<favicon_image>')]:
+            try:
+                with app.open_resource(f'static/logos/{fname}') as f:
+                    msg.attach(fname, 'image/png', f.read(), disposition='inline', headers={'Content-ID': cid})
+            except Exception as e:
+                print(f"[EMAIL] Warning: Could not attach {fname}: {e}")
+        
+        mail.send(msg)
+        print(f"[EMAIL] ✓ Announcement email sent successfully to {user.email}")
+        return True
+        
+    except Exception as e:
+        print(f"[EMAIL] ✗ Failed to send announcement email: {e}")
+        import traceback
+        traceback.print_exc()
+        return False

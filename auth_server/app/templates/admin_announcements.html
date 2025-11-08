@@ -1,0 +1,499 @@
+{% extends "base.html" %}
+
+{% block title %}Send Announcement - Admin - {{ BRAND_LOCKUP }}{% endblock %}
+
+{% block containerType %}
+<div class="admin-container">
+{% endblock %}
+
+{% block content %}
+    <!-- Header Section -->
+    <div class="admin-header">
+        <div class="admin-logo-section">
+            <div class="admin-shield-icon">
+                <i class="fas fa-bullhorn"></i>
+            </div>
+            <h1>Send Announcement</h1>
+            <p class="admin-subtitle">Broadcast important updates to all verified users</p>
+        </div>
+        
+        <div class="admin-welcome">
+            <div class="admin-actions">
+                <a href="{{ url_for('auth.admin_interface') }}" class="back-to-dashboard">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back to Admin</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alerts Container -->
+    <div id="alerts"></div>
+
+    <!-- Announcement Form -->
+    <div class="admin-card">
+        <div class="card-header">
+            <div class="card-icon">
+                <i class="fas fa-envelope"></i>
+            </div>
+            <div class="card-title">
+                <h2>Compose Announcement</h2>
+                <p>This email will be sent to <strong>{{ users_count }}</strong> verified users</p>
+            </div>
+        </div>
+        
+        <div class="card-content">
+            <form id="announcement-form">
+                <div class="form-group">
+                    <label for="title">Announcement Title *</label>
+                    <input type="text" id="title" class="form-control" placeholder="e.g., Introducing Two-Factor Authentication" required>
+                    <small class="form-text">This appears as the main heading in the email</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="subtitle">Subtitle *</label>
+                    <input type="text" id="subtitle" class="form-control" placeholder="e.g., Enhanced security for your account" required>
+                    <small class="form-text">Brief description shown below the title</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="content">Main Content (HTML allowed) *</label>
+                    <textarea id="content" class="form-control" rows="8" placeholder="<p>We're excited to announce...</p>" required></textarea>
+                    <small class="form-text">You can use HTML tags like &lt;p&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;ul&gt;, &lt;li&gt;</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="benefits">Key Benefits (one per line) *</label>
+                    <textarea id="benefits" class="form-control" rows="4" placeholder="Stronger account security&#10;Protection against unauthorized access&#10;Easy setup process" required></textarea>
+                    <small class="form-text">Each line will be displayed as a bullet point</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="cta-text">Call-to-Action Button Text (optional)</label>
+                    <input type="text" id="cta-text" class="form-control" placeholder="e.g., Enable Two-Factor Authentication">
+                    <small class="form-text">Leave empty if no button is needed</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="cta-link">Call-to-Action Button Link (optional)</label>
+                    <input type="url" id="cta-link" class="form-control" placeholder="https://auth-keyn.bynolo.ca/mfa">
+                    <small class="form-text">Full URL for the button (required if button text is provided)</small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" id="preview-btn" class="btn btn-secondary">
+                        <i class="fas fa-eye"></i> Send Preview to Me
+                    </button>
+                    <button type="submit" id="send-btn" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> Send to All Users
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Pre-made Templates -->
+    <div class="admin-card">
+        <div class="card-header">
+            <div class="card-icon">
+                <i class="fas fa-magic"></i>
+            </div>
+            <div class="card-title">
+                <h2>Quick Templates</h2>
+                <p>Pre-filled announcement templates</p>
+            </div>
+        </div>
+        
+        <div class="card-content">
+            <div class="template-buttons">
+                <button type="button" class="template-btn" onclick="loadSecurityTemplate()">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Security Update</span>
+                </button>
+                <button type="button" class="template-btn" onclick="loadFeatureTemplate()">
+                    <i class="fas fa-star"></i>
+                    <span>New Feature</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+<style>
+.admin-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+.admin-header {
+    margin-bottom: 2rem;
+}
+
+.admin-logo-section {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.admin-shield-icon {
+    display: inline-block;
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #157347, #0f5132);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+}
+
+.admin-shield-icon i {
+    font-size: 2.5rem;
+    color: white;
+}
+
+.admin-header h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+}
+
+.admin-subtitle {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+}
+
+.admin-welcome {
+    display: flex;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
+.admin-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.back-to-dashboard {
+    padding: 0.75rem 1.5rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+}
+
+.back-to-dashboard:hover {
+    background: var(--bg-color);
+    transform: translateY(-2px);
+}
+
+.admin-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.card-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #157347, #0f5132);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.card-icon i {
+    font-size: 1.5rem;
+    color: white;
+}
+
+.card-title h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--text-color);
+}
+
+.card-title p {
+    margin: 0.25rem 0 0 0;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 1rem;
+    background: var(--bg-color);
+    color: var(--text-color);
+    font-family: inherit;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #157347;
+    box-shadow: 0 0 0 3px rgba(21, 115, 71, 0.1);
+}
+
+textarea.form-control {
+    resize: vertical;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+    font-size: 0.9rem;
+}
+
+.form-text {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+
+#alerts {
+    margin-bottom: 1.5rem;
+}
+
+.alert {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.alert-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.alert-info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+.template-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.template-btn {
+    padding: 1rem;
+    background: var(--bg-color);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.2s;
+    font-size: 1rem;
+    color: var(--text-color);
+}
+
+.template-btn:hover {
+    border-color: #157347;
+    background: rgba(21, 115, 71, 0.05);
+    transform: translateY(-2px);
+}
+
+.template-btn i {
+    font-size: 1.5rem;
+    color: #157347;
+}
+
+.template-btn span {
+    font-weight: 500;
+}
+</style>
+
+<script>
+// Template presets
+function loadSecurityTemplate() {
+    document.getElementById('title').value = 'Important Security Update';
+    document.getElementById('subtitle').value = 'Enhanced protection for your KeyN account';
+    document.getElementById('content').value = `<p>We've implemented several security enhancements to better protect your account and data.</p>
+
+<p>These improvements are already active and require no action on your part. Your account is now more secure than ever.</p>`;
+    document.getElementById('benefits').value = `Enhanced security headers and protections
+Improved rate limiting on sensitive endpoints
+Stronger password requirements for new accounts
+Advanced audit logging for security events`;
+    document.getElementById('cta-text').value = '';
+    document.getElementById('cta-link').value = '';
+}
+
+function loadFeatureTemplate() {
+    document.getElementById('title').value = 'New Feature Available';
+    document.getElementById('subtitle').value = "Discover what's new in KeyN";
+    document.getElementById('content').value = `<p>We're constantly improving KeyN to provide you with the best authentication experience.</p>
+
+<p>Check out our latest features and enhancements designed to make your account more secure and easier to manage.</p>`;
+    document.getElementById('benefits').value = `Improved user experience
+Enhanced security options
+Better account management
+Streamlined workflows`;
+    document.getElementById('cta-text').value = 'Learn More';
+    document.getElementById('cta-link').value = 'https://keyn.bynolo.ca';
+}
+
+// Show alert
+function showAlert(message, type = 'info') {
+    const alertsDiv = document.getElementById('alerts');
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type}`;
+    
+    const icon = type === 'success' ? 'fa-check-circle' : 
+                 type === 'error' ? 'fa-exclamation-triangle' : 
+                 'fa-info-circle';
+    
+    alert.innerHTML = `<i class="fas ${icon}"></i><span>${message}</span>`;
+    alertsDiv.appendChild(alert);
+    
+    setTimeout(() => alert.remove(), 5000);
+}
+
+// Preview announcement
+document.getElementById('preview-btn').addEventListener('click', async function() {
+    const data = getFormData();
+    if (!data) return;
+    
+    this.disabled = true;
+    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending Preview...';
+    
+    try {
+        const response = await fetch('/admin/announcements/preview', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert(result.message, 'success');
+        } else {
+            showAlert(result.error || 'Failed to send preview', 'error');
+        }
+    } catch (error) {
+        showAlert('Error: ' + error.message, 'error');
+    } finally {
+        this.disabled = false;
+        this.innerHTML = '<i class="fas fa-eye"></i> Send Preview to Me';
+    }
+});
+
+// Send announcement
+document.getElementById('announcement-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const data = getFormData();
+    if (!data) return;
+    
+    if (!confirm(`Are you sure you want to send this announcement to {{ users_count }} users?`)) {
+        return;
+    }
+    
+    const sendBtn = document.getElementById('send-btn');
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+    
+    try {
+        const response = await fetch('/admin/announcements/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert(`✓ Announcement sent successfully to ${result.sent} users!`, 'success');
+            document.getElementById('announcement-form').reset();
+        } else {
+            showAlert(result.error || 'Failed to send announcement', 'error');
+        }
+    } catch (error) {
+        showAlert('Error: ' + error.message, 'error');
+    } finally {
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send to All Users';
+    }
+});
+
+// Get form data
+function getFormData() {
+    const title = document.getElementById('title').value.trim();
+    const subtitle = document.getElementById('subtitle').value.trim();
+    const content = document.getElementById('content').value.trim();
+    const benefitsText = document.getElementById('benefits').value.trim();
+    const ctaText = document.getElementById('cta-text').value.trim();
+    const ctaLink = document.getElementById('cta-link').value.trim();
+    
+    if (!title || !subtitle || !content || !benefitsText) {
+        showAlert('Please fill in all required fields', 'error');
+        return null;
+    }
+    
+    if (ctaText && !ctaLink) {
+        showAlert('Please provide a link for the call-to-action button', 'error');
+        return null;
+    }
+    
+    const benefits = benefitsText.split('\n').filter(b => b.trim()).map(b => b.trim());
+    
+    return {
+        title,
+        subtitle,
+        content,
+        benefits,
+        cta_text: ctaText || null,
+        cta_link: ctaLink || null
+    };
+}
+</script>
+{% endblock %}

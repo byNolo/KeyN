@@ -10,9 +10,10 @@ from . import db, login_manager
 from .security_utils import (
     get_real_ip, generate_device_fingerprint, is_ip_banned, is_device_banned,
     log_login_attempt, is_rate_limited, ban_ip, ban_device, unban_ip, unban_device,
-    verify_turnstile
+    verify_turnstile, check_rate_limit, log_rate_limit_attempt, validate_redirect_url,
+    sanitize_string
 )
-from .auth_utils import admin_required, send_admin_action_email
+from .auth_utils import admin_required, send_admin_action_email, send_announcement_email
 from .oauth_utils import ScopeManager, ClientManager, AuthorizationManager
 import jwt
 import datetime
@@ -20,6 +21,7 @@ import secrets
 import os
 import json
 import uuid
+import logging
 from .passkey_utils import (
     start_registration as pk_start_registration,
     finish_registration as pk_finish_registration,
@@ -29,6 +31,9 @@ from .passkey_utils import (
     serialize_registration_options,
     serialize_authentication_options
 )
+
+# Get audit logger for security events
+audit_logger = logging.getLogger('audit')
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -70,11 +75,12 @@ def login():
             if not user.is_verified:
                 # Log failed attempt for unverified user
                 log_login_attempt(ip_address, device_fingerprint, username, False)
+                audit_logger.warning(f"Login attempt by unverified user: user_id={user.id}, username={username}, ip={ip_address}")
                 form.username.errors.append("Please verify your email first.")
                 return render_template("login.html", form=form)
-            
             # Log successful login
             log_login_attempt(ip_address, device_fingerprint, username, True, user.id)
+            audit_logger.info(f"Login success: user_id={user.id}, username={username}, ip={ip_address}")
             
             # Update user's last login
             user.last_login = datetime.datetime.utcnow()
@@ -83,6 +89,17 @@ def login():
             # Debug: Check user before login
             print(f"DEBUG: About to login user {user.id} - {user.username}")
             print(f"DEBUG: User.is_verified = {user.is_verified}")
+            
+            # Regenerate session to prevent session fixation attacks
+            # Store any data we need to preserve
+            oauth_redirect = session.get('oauth_redirect_after_login')
+            
+            # Clear and regenerate session
+            session.clear()
+            
+            # Restore preserved data if any
+            if oauth_redirect:
+                session['oauth_redirect_after_login'] = oauth_redirect
             
             login_user(user, remember=True)  # Enable remember me
             
@@ -96,8 +113,8 @@ def login():
             
             print(f"DEBUG: Session after login = {dict(session)}")
             
-            # Determine redirect destination
-            redirect_url = request.args.get("redirect")
+            # Determine redirect destination (with validation)
+            redirect_url = validate_redirect_url(request.args.get("redirect"))
             
             # If no specific redirect and user needs profile completion, suggest it
             # But don't force it if they have a specific destination (like OAuth flow)
@@ -111,6 +128,7 @@ def login():
         
         # Log failed login attempt
         log_login_attempt(ip_address, device_fingerprint, username, False)
+        audit_logger.warning(f"Login failed: username={username}, ip={ip_address}")
         form.username.errors.append("Invalid username or password")
     
     return render_template("login.html", form=form)
@@ -131,8 +149,8 @@ def logout():
     # Prepare response to clear cookies
     from flask import make_response
     if request.method == "GET":
-        # Check for redirect parameter (like from demo client)
-        redirect_url = request.args.get("redirect")
+        # Check for redirect parameter (like from demo client) and validate it
+        redirect_url = validate_redirect_url(request.args.get("redirect"))
         if redirect_url:
             from config import Config
             allowed_domains = Config.ALLOWED_REDIRECT_DOMAINS
@@ -310,16 +328,27 @@ def privacy_policy():
 # Forgot Password
 @auth_bp.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
+    ip_address = get_real_ip()
+    
+    # Rate limit password reset requests (3 per hour per IP)
+    if check_rate_limit(ip_address, 'password_reset', max_attempts=3, window_minutes=60):
+        flash("Too many password reset requests. Please try again later.", "error")
+        return render_template("forgot_password.html", form=ForgotPasswordForm())
+    
     form = ForgotPasswordForm()
     if form.validate_on_submit():
         if current_app.config.get('TURNSTILE_ENABLED', False):
-            ip_address = get_real_ip()
             token = request.form.get('cf-turnstile-response')
             ok, err = verify_turnstile(token, ip_address)
             if not ok:
                 form.email.errors.append('Human verification failed. Please try again.')
                 return render_template("forgot_password.html", form=form)
+        
         user = User.query.filter_by(email=form.email.data).first()
+        
+        # Log the attempt
+        log_rate_limit_attempt(ip_address, 'password_reset', success=True)
+        
         if user:
             serializer = get_serializer()
             token = serializer.dumps(user.email, salt="password-reset-salt")
@@ -377,16 +406,27 @@ def reset_password(token):
 # Forgot Username
 @auth_bp.route("/forgot-username", methods=["GET", "POST"])
 def forgot_username():
+    ip_address = get_real_ip()
+    
+    # Rate limit username recovery requests (3 per hour per IP)
+    if check_rate_limit(ip_address, 'username_recovery', max_attempts=3, window_minutes=60):
+        flash("Too many username recovery requests. Please try again later.", "error")
+        return render_template("forgot_username.html", form=ForgotUsernameForm())
+    
     form = ForgotUsernameForm()
     if form.validate_on_submit():
         if current_app.config.get('TURNSTILE_ENABLED', False):
-            ip_address = get_real_ip()
             token = request.form.get('cf-turnstile-response')
             ok, err = verify_turnstile(token, ip_address)
             if not ok:
                 form.email.errors.append('Human verification failed. Please try again.')
                 return render_template("forgot_username.html", form=form)
+        
         user = User.query.filter_by(email=form.email.data).first()
+        
+        # Log the attempt
+        log_rate_limit_attempt(ip_address, 'username_recovery', success=True)
+        
         if user:
             msg = Message(f"{BRAND_PRODUCT} Username Recovery – {BRAND_OWNER}", recipients=[user.email])
             msg.html = render_template("email/username_reminder.html", username=user.username)
@@ -419,11 +459,17 @@ from . import mail
 
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
+    ip_address = get_real_ip()
+    
+    # Rate limit registration requests (5 per hour per IP)
+    if check_rate_limit(ip_address, 'registration', max_attempts=5, window_minutes=60):
+        flash("Too many registration requests. Please try again later.", "error")
+        return render_template("register.html", form=RegisterForm(), redirect_url=request.args.get("redirect"))
+    
     form = RegisterForm()
     redirect_url = request.args.get("redirect")
     if form.validate_on_submit():
         if current_app.config.get('TURNSTILE_ENABLED', False):
-            ip_address = get_real_ip()
             token = request.form.get('cf-turnstile-response')
             ok, err = verify_turnstile(token, ip_address)
             if not ok:
@@ -434,6 +480,9 @@ def register():
         elif User.query.filter_by(email=form.email.data).first():
             form.email.errors.append("Email already in use")
         else:
+            # Log successful registration attempt
+            log_rate_limit_attempt(ip_address, 'registration', success=True)
+            
             new_user = User(
                 username=form.username.data,
                 email=form.email.data,
@@ -442,6 +491,9 @@ def register():
             )
             db.session.add(new_user)
             db.session.commit()
+            
+            audit_logger.info(f"New user registered: user_id={new_user.id}, username={new_user.username}, email={new_user.email}, ip={ip_address}")
+            
             send_verification_email(new_user, current_app, mail)
             return render_template("email_verification_sent.html", redirect_url=redirect_url)
     return render_template("register.html", form=form, redirect_url=redirect_url)
@@ -454,6 +506,8 @@ def verify_email(token):
         if user and not user.is_verified:
             user.is_verified = True
             db.session.commit()
+            
+            audit_logger.info(f"Email verified: user_id={user.id}, username={user.username}")
             
             # Log the user in automatically after email verification
             login_user(user, remember=True)
@@ -490,6 +544,8 @@ def admin_ban_ip():
         expires_at = datetime.datetime.utcnow() + datetime.timedelta(hours=duration_hours)
     
     ban_ip(ip_address, reason, current_user.id, expires_at)
+    
+    audit_logger.warning(f"IP banned: ip={ip_address}, reason={reason}, by_user={current_user.id}, expires={expires_at}")
     
     return jsonify({
         "success": True, 
@@ -1190,7 +1246,7 @@ def profile():
 def complete_profile():
     """Complete user profile after registration"""
     form = ProfileCompletionForm()
-    redirect_url = request.args.get("redirect")
+    redirect_url = validate_redirect_url(request.args.get("redirect"))
     
     if form.validate_on_submit():
         if form.skip.data:
@@ -1199,21 +1255,21 @@ def complete_profile():
                 return redirect(redirect_url)
             return redirect(url_for("auth.profile"))
         
-        # User submitted profile information
+        # User submitted profile information - sanitize inputs
         if form.first_name.data:
-            current_user.first_name = form.first_name.data
+            current_user.first_name = sanitize_string(form.first_name.data, 100)
         if form.last_name.data:
-            current_user.last_name = form.last_name.data
+            current_user.last_name = sanitize_string(form.last_name.data, 100)
         if form.display_name.data:
-            current_user.display_name = form.display_name.data
+            current_user.display_name = sanitize_string(form.display_name.data, 200)
         if form.bio.data:
-            current_user.bio = form.bio.data
+            current_user.bio = sanitize_string(form.bio.data, 500, allow_newlines=True)
         if form.location.data:
-            current_user.location = form.location.data
+            current_user.location = sanitize_string(form.location.data, 200)
         if form.date_of_birth.data:
             current_user.date_of_birth = form.date_of_birth.data
         if form.website.data:
-            current_user.website = form.website.data
+            current_user.website = sanitize_string(form.website.data, 500)
         
         current_user.updated_at = datetime.datetime.utcnow()
         db.session.commit()
@@ -1240,14 +1296,14 @@ def edit_profile():
                 flash("Email address is already in use", "error")
                 return render_template("edit_profile.html", form=form)
         
-        # Update user profile
-        current_user.first_name = form.first_name.data
-        current_user.last_name = form.last_name.data
-        current_user.display_name = form.display_name.data
+        # Update user profile - sanitize all inputs
+        current_user.first_name = sanitize_string(form.first_name.data, 100)
+        current_user.last_name = sanitize_string(form.last_name.data, 100)
+        current_user.display_name = sanitize_string(form.display_name.data, 200)
         current_user.email = form.email.data
-        current_user.bio = form.bio.data
-        current_user.website = form.website.data
-        current_user.location = form.location.data
+        current_user.bio = sanitize_string(form.bio.data, 500, allow_newlines=True)
+        current_user.website = sanitize_string(form.website.data, 500)
+        current_user.location = sanitize_string(form.location.data, 200)
         current_user.date_of_birth = form.date_of_birth.data
         current_user.updated_at = datetime.datetime.utcnow()
         
@@ -1284,6 +1340,8 @@ def change_password():
         current_user.password_hash = generate_password_hash(form.new_password.data)
         current_user.updated_at = datetime.datetime.utcnow()
         db.session.commit()
+        
+        audit_logger.info(f"Password changed: user_id={current_user.id}, username={current_user.username}")
         
         flash("Password changed successfully", "success")
         return redirect(url_for("auth.profile"))
@@ -1450,3 +1508,101 @@ def passkeys_authenticate():
         if current_app.config.get('PASSKEY_DEBUG'):
             return jsonify({'error': str(e)}), 400
         return jsonify({'error': 'Passkey authentication failed'}), 400
+
+# =====================================================
+# Admin Announcement System
+# =====================================================
+
+@auth_bp.route('/admin/announcements', methods=['GET'])
+@admin_required
+def admin_announcements():
+    """Admin page for sending announcements"""
+    users_count = User.query.filter_by(is_verified=True).count()
+    return render_template('admin_announcements.html', users_count=users_count)
+
+
+@auth_bp.route('/admin/announcements/send', methods=['POST'])
+@admin_required
+def admin_send_announcement():
+    """Send announcement email to all verified users"""
+    data = request.get_json()
+    
+    # Validate required fields
+    required_fields = ['title', 'subtitle', 'content', 'benefits']
+    for field in required_fields:
+        if not data.get(field):
+            return jsonify({'error': f'Missing required field: {field}'}), 400
+    
+    # Get all verified users
+    users = User.query.filter_by(is_verified=True).all()
+    
+    if not users:
+        return jsonify({'error': 'No verified users found'}), 400
+    
+    # Prepare announcement data
+    announcement_data = {
+        'title': data['title'],
+        'subtitle': data['subtitle'],
+        'content': data['content'],
+        'benefits': data['benefits'],
+        'cta_text': data.get('cta_text'),
+        'cta_link': data.get('cta_link')
+    }
+    
+    # Send to all users
+    success_count = 0
+    failed_count = 0
+    
+    for user in users:
+        try:
+            if send_announcement_email(user, announcement_data, current_app, mail):
+                success_count += 1
+            else:
+                failed_count += 1
+        except Exception as e:
+            current_app.logger.error(f"Failed to send announcement to {user.email}: {e}")
+            failed_count += 1
+    
+    # Log the announcement in audit log
+    audit_logger.info(f"Announcement sent by admin user_id={current_user.id}: '{data['title']}' - {success_count} sent, {failed_count} failed")
+    
+    return jsonify({
+        'success': True,
+        'sent': success_count,
+        'failed': failed_count,
+        'total': len(users)
+    })
+
+
+@auth_bp.route('/admin/announcements/preview', methods=['POST'])
+@admin_required
+def admin_preview_announcement():
+    """Send preview announcement email to admin only"""
+    data = request.get_json()
+    
+    # Validate required fields
+    required_fields = ['title', 'subtitle', 'content', 'benefits']
+    for field in required_fields:
+        if not data.get(field):
+            return jsonify({'error': f'Missing required field: {field}'}), 400
+    
+    # Prepare announcement data
+    announcement_data = {
+        'title': data['title'],
+        'subtitle': data['subtitle'],
+        'content': data['content'],
+        'benefits': data['benefits'],
+        'cta_text': data.get('cta_text'),
+        'cta_link': data.get('cta_link')
+    }
+    
+    # Send to current admin user
+    try:
+        if send_announcement_email(current_user, announcement_data, current_app, mail):
+            audit_logger.info(f"Preview announcement sent to admin user_id={current_user.id}")
+            return jsonify({'success': True, 'message': f'Preview sent to {current_user.email}'})
+        else:
+            return jsonify({'error': 'Failed to send preview'}), 500
+    except Exception as e:
+        current_app.logger.error(f"Failed to send preview: {e}")
+        return jsonify({'error': str(e)}), 500

@@ -6,6 +6,7 @@ from . import db
 from .models import User, IPBan, DeviceBan, LoginAttempt
 import requests
 from typing import Tuple, Optional
+from urllib.parse import urlparse
 
 def get_real_ip():
     """
@@ -31,17 +32,29 @@ def get_real_ip():
 
 def generate_device_fingerprint():
     """
-    Generate a unique device fingerprint based on various browser/device characteristics
+    Generate a unique device fingerprint based on various browser/device characteristics.
+    Enhanced version with more entropy for better tracking while maintaining backwards compatibility.
     """
     user_agent = request.headers.get('User-Agent', '')
     accept_language = request.headers.get('Accept-Language', '')
     accept_encoding = request.headers.get('Accept-Encoding', '')
+    accept = request.headers.get('Accept', '')
     
-    # Create a fingerprint from browser characteristics
-    fingerprint_data = f"{user_agent}|{accept_language}|{accept_encoding}"
+    # Include IP subnet for better tracking (not full IP for privacy)
+    # This provides more entropy while respecting user privacy
+    ip = get_real_ip()
+    ip_subnet = ''
+    if '.' in ip:  # IPv4
+        ip_subnet = '.'.join(ip.split('.')[:3])  # First 3 octets
+    elif ':' in ip:  # IPv6
+        ip_subnet = ':'.join(ip.split(':')[:4])  # First 4 hextets
     
-    # Hash the fingerprint for storage
-    device_fingerprint = hashlib.sha256(fingerprint_data.encode()).hexdigest()[:32]
+    # Combine multiple factors for stronger fingerprint
+    fingerprint_data = f"{user_agent}|{accept_language}|{accept_encoding}|{accept}|{ip_subnet}"
+    
+    # Use full SHA256 hash (64 characters = 256 bits) for better collision resistance
+    # This is more secure than the previous 32-character truncated version
+    device_fingerprint = hashlib.sha256(fingerprint_data.encode()).hexdigest()
     
     return device_fingerprint
 
@@ -162,6 +175,52 @@ def is_rate_limited(ip_address, max_attempts=5, window_minutes=15):
     return failed_attempts >= max_attempts
 
 
+def get_rate_limit_key(identifier, action_type):
+    """Generate a rate limit tracking key"""
+    return f"rate_limit:{action_type}:{identifier}"
+
+
+def check_rate_limit(identifier, action_type, max_attempts=5, window_minutes=15):
+    """
+    Generic rate limiting function for any action type.
+    Returns True if rate limit is exceeded, False otherwise.
+    
+    Args:
+        identifier: Unique identifier (IP address, email, etc.)
+        action_type: Type of action (password_reset, registration, etc.)
+        max_attempts: Maximum number of attempts allowed
+        window_minutes: Time window in minutes
+    """
+    from .models import LoginAttempt
+    
+    since = datetime.datetime.utcnow() - datetime.timedelta(minutes=window_minutes)
+    
+    # Count attempts for this action type and identifier
+    attempts = LoginAttempt.query.filter_by(
+        ip_address=identifier,
+        username_attempted=action_type,  # Repurpose this field for action type
+        success=False
+    ).filter(LoginAttempt.timestamp >= since).count()
+    
+    return attempts >= max_attempts
+
+
+def log_rate_limit_attempt(identifier, action_type, success=False):
+    """Log a rate-limited action attempt"""
+    from .models import LoginAttempt
+    
+    attempt = LoginAttempt(
+        ip_address=identifier,
+        device_fingerprint=generate_device_fingerprint(),
+        user_agent=request.headers.get('User-Agent', ''),
+        username_attempted=action_type,
+        success=success,
+        failure_reason='Rate limit check' if not success else None
+    )
+    db.session.add(attempt)
+    db.session.commit()
+
+
 def verify_turnstile(token: str, remoteip: Optional[str] = None) -> Tuple[bool, str]:
     """
     Verify Cloudflare Turnstile token.
@@ -195,3 +254,107 @@ def verify_turnstile(token: str, remoteip: Optional[str] = None) -> Tuple[bool, 
         if current_app.config.get('TURNSTILE_ENABLED', False):
             return False, str(e)
         return True, ''
+
+
+def validate_redirect_url(url):
+    """
+    Validate redirect URL against whitelist to prevent open redirect attacks.
+    Returns the URL if valid, None otherwise.
+    """
+    if not url:
+        return None
+    
+    try:
+        parsed = urlparse(url)
+        
+        # Check against allowed domains from config
+        allowed_domains = current_app.config.get('ALLOWED_REDIRECT_DOMAINS', [])
+        
+        # Check if URL starts with an allowed domain
+        if not any(url.startswith(domain) for domain in allowed_domains):
+            current_app.logger.warning(f"Blocked redirect to unauthorized domain: {url}")
+            return None
+        
+        # Additional security checks
+        if parsed.scheme not in ['http', 'https', '']:
+            current_app.logger.warning(f"Blocked redirect with invalid scheme: {parsed.scheme}")
+            return None
+        
+        # Block javascript: and data: URIs
+        if parsed.scheme in ['javascript', 'data', 'file', 'vbscript']:
+            current_app.logger.warning(f"Blocked dangerous redirect scheme: {parsed.scheme}")
+            return None
+        
+        return url
+        
+    except Exception as e:
+        current_app.logger.error(f"Error validating redirect URL: {e}")
+        return None
+
+
+def sanitize_string(value, max_length=255, allow_newlines=False):
+    """
+    Sanitize and validate string input.
+    
+    Args:
+        value: Input string to sanitize
+        max_length: Maximum allowed length
+        allow_newlines: Whether to preserve newline characters
+        
+    Returns:
+        Sanitized string
+    """
+    if not isinstance(value, str):
+        return ""
+    
+    # Strip leading/trailing whitespace
+    value = value.strip()
+    
+    # Remove null bytes (security issue)
+    value = value.replace('\x00', '')
+    
+    # Remove other control characters except tabs and newlines
+    if not allow_newlines:
+        value = ''.join(char for char in value if ord(char) >= 32 or char == '\t')
+    else:
+        value = ''.join(char for char in value if ord(char) >= 32 or char in ['\t', '\n', '\r'])
+    
+    # Truncate to max length
+    if len(value) > max_length:
+        value = value[:max_length]
+    
+    return value
+
+
+def validate_email_format(email):
+    """
+    Basic email format validation.
+    More thorough validation is done by WTForms Email validator.
+    
+    Returns:
+        True if format looks valid, False otherwise
+    """
+    if not email or not isinstance(email, str):
+        return False
+    
+    # Basic checks
+    if len(email) > 254:  # RFC 5321
+        return False
+    
+    if '@' not in email:
+        return False
+    
+    local, domain = email.rsplit('@', 1)
+    
+    # Check local part
+    if not local or len(local) > 64:
+        return False
+    
+    # Check domain part
+    if not domain or len(domain) > 253:
+        return False
+    
+    if '..' in email:  # No consecutive dots
+        return False
+    
+    return True

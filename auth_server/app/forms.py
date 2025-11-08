@@ -1,6 +1,42 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, TextAreaField, DateField
-from wtforms.validators import DataRequired, Email, EqualTo, Optional, Length, URL
+from wtforms.validators import DataRequired, Email, EqualTo, Optional, Length, URL, ValidationError
+import re
+
+
+def validate_password_strength(form, field):
+    """
+    Validate password meets complexity requirements.
+    Only enforced for new passwords and password changes.
+    """
+    password = field.data
+    errors = []
+    
+    if len(password) < 8:
+        errors.append('Password must be at least 8 characters long')
+    
+    if len(password) > 128:
+        errors.append('Password must not exceed 128 characters')
+    
+    if not re.search(r'[A-Z]', password):
+        errors.append('Password must contain at least one uppercase letter')
+    
+    if not re.search(r'[a-z]', password):
+        errors.append('Password must contain at least one lowercase letter')
+    
+    if not re.search(r'\d', password):
+        errors.append('Password must contain at least one number')
+    
+    # Check for common weak passwords
+    common_passwords = [
+        'password', '12345678', 'qwerty', 'admin', 'letmein', 
+        'welcome', 'monkey', '1234567890', 'password123', 'admin123'
+    ]
+    if password.lower() in common_passwords:
+        errors.append('Password is too common and easily guessed')
+    
+    if errors:
+        raise ValidationError(' • '.join(errors))
 
 
 class LoginForm(FlaskForm):
@@ -11,7 +47,7 @@ class LoginForm(FlaskForm):
 class RegisterForm(FlaskForm):
     username = StringField("Username", validators=[DataRequired()])
     email = StringField("Email", validators=[DataRequired(), Email()])
-    password = PasswordField("Password", validators=[DataRequired()])
+    password = PasswordField("Password", validators=[DataRequired(), validate_password_strength])
     confirm = PasswordField("Confirm Password", validators=[
         DataRequired(), EqualTo("password")
     ])
@@ -59,7 +95,7 @@ class ProfileCompletionForm(FlaskForm):
 # Change Password form
 class ChangePasswordForm(FlaskForm):
     current_password = PasswordField("Current Password", validators=[DataRequired()])
-    new_password = PasswordField("New Password", validators=[DataRequired(), Length(min=8)])
+    new_password = PasswordField("New Password", validators=[DataRequired(), Length(min=8), validate_password_strength])
     confirm_password = PasswordField("Confirm New Password", validators=[
         DataRequired(), EqualTo("new_password", message="Passwords must match")
     ])

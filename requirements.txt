@@ -14,4 +14,3 @@ gunicorn
 # Passkey / WebAuthn support
 webauthn==2.0.0
 cryptography
-

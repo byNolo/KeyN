@@ -1,0 +1,37 @@
+{% extends "email/base_email.html" %}
+
+{% block title %}{{ announcement_title }} - KeyN{% endblock %}
+{% block email_title %}{{ announcement_title }}{% endblock %}
+{% block email_subtitle %}{{ announcement_subtitle }}{% endblock %}
+
+{% block email_content %}
+<p>Hi {{ username }},</p>
+
+<p>We're excited to share some important news about KeyN!</p>
+
+{{ announcement_content | safe }}
+
+{% if cta_text and cta_link %}
+<div class="button-container">
+  <a href="{{ cta_link }}" class="btn-primary">{{ cta_text }}</a>
+</div>
+{% endif %}
+
+<div class="info-box">
+  <h4>What This Means for You</h4>
+  <ul>
+    {% for benefit in benefits %}
+    <li>{{ benefit }}</li>
+    {% endfor %}
+  </ul>
+</div>
+
+<p>As always, your security and privacy remain our top priorities. This feature is entirely optional and can be managed from your profile settings.</p>
+
+<p>If you have any questions or feedback, please don't hesitate to reach out to our support team.</p>
+
+{% endblock %}
+
+{% block footer_disclaimer %}
+This is an important announcement from KeyN by byNolo. You're receiving this because you have a KeyN account at <strong>{{ user_email }}</strong>.
+{% endblock %}
