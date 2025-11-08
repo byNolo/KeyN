@@ -153,7 +153,10 @@ def create_app():
             "frame-src https://challenges.cloudflare.com",
             "frame-ancestors 'none'",
             "base-uri 'self'",
-            "form-action 'self'"
+            # Allow form submissions to same origin and any HTTPS destination (helps OAuth flows
+            # where a client may POST to the auth server endpoint). If you want to restrict this
+            # further, replace `https:` with specific origins (e.g. https://auth-keyn.bynolo.ca).
+            "form-action 'self' https:"
         ]
         response.headers['Content-Security-Policy'] = '; '.join(csp_parts)
         
