@@ -57,7 +57,7 @@
   {% block containerType %}
   <div class="container">
   {% endblock %}
-    <div class="card" style="width: 381.142858px;">
+    <div class="card"{% block card_style %}{% endblock %}>
       {% block content %}{% endblock %}
     </div>
   </div>
