@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+
+{% block title %}Two-Factor Authentication - {{ BRAND_LOCKUP }}{% endblock %}
+
+{% block card_style %} style="width: 1000px;"{% endblock %}
+
+{% block additional_css %}
+<style>
+    /* MFA Verification Specific Styles */
+    .mfa-verify-container {
+        max-width: 480px;
+        margin: 4rem auto;
+        padding: 0 1rem;
+    }
+
+    .mfa-verify-card {
+        background: var(--card-background);
+        border-radius: 12px;
+        padding: 2.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+
+    .mfa-verify-icon {
+        font-size: 3.5rem;
+        color: var(--primary-color);
+        margin-bottom: 1.5rem;
+    }
+
+    .mfa-verify-header h1 {
+        font-size: 1.75rem;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+    }
+
+    .mfa-verify-header p {
+        color: var(--text-secondary);
+        margin-bottom: 2rem;
+        font-size: 0.95rem;
+    }
+
+    .mfa-verify-form {
+        margin-bottom: 2rem;
+    }
+
+    .mfa-code-input {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1.5rem;
+        text-align: center;
+        font-family: 'Courier New', monospace;
+        letter-spacing: 8px;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--input-background);
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+        transition: border-color 0.2s;
+    }
+
+    .mfa-code-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .mfa-remember-device {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        padding: 0.75rem;
+        background: var(--input-background);
+        border-radius: 8px;
+    }
+
+    .mfa-remember-device input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+
+    .mfa-remember-device label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .btn-verify-mfa {
+        width: 100%;
+        background: var(--primary-color);
+        color: white;
+        padding: 1rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .btn-verify-mfa:hover {
+        background: var(--primary-color-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-verify-mfa:disabled {
+        background: var(--border-color);
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .mfa-help-section {
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .mfa-help-title {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        margin-bottom: 1rem;
+        font-weight: 500;
+    }
+
+    .mfa-backup-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--primary-color);
+        text-decoration: none;
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        transition: background 0.2s;
+    }
+
+    .mfa-backup-link:hover {
+        background: var(--input-background);
+    }
+
+    .mfa-backup-section {
+        display: none;
+        margin-top: 1.5rem;
+        padding: 1rem;
+        background: var(--input-background);
+        border-radius: 8px;
+    }
+
+    .mfa-backup-section.active {
+        display: block;
+    }
+
+    .mfa-backup-section p {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.75rem;
+    }
+
+    .backup-codes-remaining {
+        display: inline-block;
+        background: var(--primary-color);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+    }
+
+    @media (max-width: 640px) {
+        .mfa-verify-container {
+            margin: 2rem auto;
+        }
+
+        .mfa-verify-card {
+            padding: 2rem 1.5rem;
+        }
+
+        .mfa-code-input {
+            font-size: 1.25rem;
+            letter-spacing: 6px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mfa-verify-container">
+    <div class="mfa-verify-card">
+        <div class="mfa-verify-icon">
+            <i class="fas fa-shield-alt"></i>
+        </div>
+        
+        <div class="mfa-verify-header">
+            <h1>Two-Factor Authentication</h1>
+            <p>Enter the 6-digit code from your authenticator app</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}" style="margin-bottom: 1.5rem;">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" class="mfa-verify-form">
+            <input type="text" 
+                   name="code" 
+                   class="mfa-code-input" 
+                   placeholder="000000"
+                   maxlength="9"
+                   autocomplete="off"
+                   required
+                   autofocus
+                   id="mfa-code">
+
+            <div class="mfa-remember-device">
+                <input type="checkbox" id="remember_device" name="remember_device">
+                <label for="remember_device">
+                    <i class="fas fa-laptop"></i>
+                    Trust this device for 30 days
+                </label>
+            </div>
+
+            <button type="submit" class="btn-verify-mfa" id="verify-btn">
+                <i class="fas fa-check-circle"></i>
+                <span>Verify Code</span>
+            </button>
+        </form>
+
+        <div class="mfa-help-section">
+            <div class="mfa-help-title">Having trouble?</div>
+            <a href="#" class="mfa-backup-link" id="show-backup">
+                <i class="fas fa-key"></i>
+                <span>Use a backup code</span>
+                {% if unused_codes_count > 0 %}
+                <span class="backup-codes-remaining">{{ unused_codes_count }} left</span>
+                {% endif %}
+            </a>
+
+            <div class="mfa-backup-section" id="backup-section">
+                <p>
+                    <strong>Using a backup code:</strong> Enter one of your 8-character backup codes (with or without the dash). 
+                    Each code can only be used once.
+                </p>
+                {% if unused_codes_count == 0 %}
+                <p style="color: #dc2626;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    You have no backup codes remaining. Contact support if you've lost access to your authenticator.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Format and validate MFA code input
+    const codeInput = document.getElementById('mfa-code');
+    const verifyBtn = document.getElementById('verify-btn');
+
+    codeInput.addEventListener('input', function(e) {
+        // Allow digits and dashes for backup codes
+        let value = this.value.replace(/[^0-9-]/g, '');
+        
+        // If it looks like a TOTP code (6 digits), format it
+        if (value.length <= 6 && !value.includes('-')) {
+            value = value.replace(/\D/g, '');
+        }
+        
+        this.value = value;
+
+        // Enable/disable verify button
+        if (value.length === 6 || value.length === 9) {
+            verifyBtn.disabled = false;
+        } else {
+            verifyBtn.disabled = false; // Allow any length for backup codes
+        }
+    });
+
+    // Toggle backup code section
+    document.getElementById('show-backup').addEventListener('click', function(e) {
+        e.preventDefault();
+        const backupSection = document.getElementById('backup-section');
+        backupSection.classList.toggle('active');
+        
+        if (backupSection.classList.contains('active')) {
+            this.querySelector('span').textContent = 'Hide backup codes';
+            codeInput.placeholder = 'XXXX-XXXX';
+            codeInput.maxLength = 9;
+        } else {
+            this.querySelector('span').textContent = 'Use a backup code';
+            codeInput.placeholder = '000000';
+            codeInput.maxLength = 6;
+        }
+        
+        codeInput.focus();
+    });
+
+    // Auto-submit on 6 digits (optional)
+    codeInput.addEventListener('input', function(e) {
+        if (this.value.length === 6 && !this.value.includes('-')) {
+            // Optionally auto-submit
+            // setTimeout(() => this.form.submit(), 300);
+        }
+    });
+</script>
+{% endblock %}

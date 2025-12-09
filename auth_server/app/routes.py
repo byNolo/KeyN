@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, jsonify, current_app, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
-from .models import User, RefreshToken, ClientApplication, DataScope, UserAuthorization, PasskeyCredential
+from .models import User, RefreshToken, ClientApplication, DataScope, UserAuthorization, PasskeyCredential, MFASecret, MFABackupCode, MFATrustedDevice
 from .forms import LoginForm, RegisterForm, ForgotPasswordForm, ForgotUsernameForm, ProfileForm, ChangePasswordForm, ProfileCompletionForm, ChangeEmailForm
 from flask_wtf import FlaskForm
 from wtforms import PasswordField, SubmitField
@@ -82,10 +82,26 @@ def login():
                 audit_logger.warning(f"Login attempt by unverified user: user_id={user.id}, username={user.username}, ip={ip_address}")
                 form.username.errors.append("Please verify your email first.")
                 return render_template("login.html", form=form)
-            # Log successful login
-            log_login_attempt(ip_address, device_fingerprint, username_or_email, True, user.id)
-            audit_logger.info(f"Login success: user_id={user.id}, username={user.username}, ip={ip_address}")
             
+            # Log successful password verification
+            log_login_attempt(ip_address, device_fingerprint, username_or_email, True, user.id)
+            audit_logger.info(f"Password verified: user_id={user.id}, username={user.username}, ip={ip_address}")
+            
+            # Check if MFA is enabled
+            if user.has_mfa_enabled():
+                # Check if device is trusted
+                if is_device_trusted(user, device_fingerprint):
+                    audit_logger.info(f"Trusted device, skipping MFA: user_id={user.id}, fingerprint={device_fingerprint[:16]}...")
+                else:
+                    # Require MFA verification
+                    session['mfa_pending_user_id'] = user.id
+                    # Store redirect URL if provided
+                    redirect_url = validate_redirect_url(request.args.get("redirect"))
+                    if redirect_url:
+                        session['mfa_redirect_after_login'] = redirect_url
+                    return redirect(url_for('auth.mfa_verify'))
+            
+            # No MFA or trusted device - proceed with login
             # Update user's last login
             user.last_login = datetime.datetime.utcnow()
             db.session.commit()
@@ -1564,6 +1580,236 @@ def passkeys_authenticate():
         if current_app.config.get('PASSKEY_DEBUG'):
             return jsonify({'error': str(e)}), 400
         return jsonify({'error': 'Passkey authentication failed'}), 400
+
+# =====================================================
+# Multi-Factor Authentication (MFA) System
+# =====================================================
+
+from .mfa_utils import (
+    create_mfa_for_user, enable_mfa_for_user, disable_mfa_for_user,
+    verify_mfa_code, trust_device, is_device_trusted, revoke_trusted_device,
+    get_trusted_devices, regenerate_backup_codes, decrypt_secret, verify_totp
+)
+
+@auth_bp.route('/mfa/setup', methods=['GET', 'POST'])
+@login_required
+def mfa_setup():
+    """MFA enrollment page"""
+    if request.method == 'GET':
+        # Check if user already has MFA enabled
+        if current_user.has_mfa_enabled():
+            flash("MFA is already enabled for your account. Disable it first to set up again.", "info")
+            return redirect(url_for('auth.mfa_manage'))
+        
+        # Generate new MFA secret and QR code
+        secret, qr_code, backup_codes = create_mfa_for_user(current_user)
+        
+        # Store codes in session temporarily for display
+        session['mfa_setup_backup_codes'] = backup_codes
+        session['mfa_setup_secret'] = secret  # For verification
+        
+        return render_template('mfa_setup.html', 
+                             qr_code=qr_code, 
+                             secret=secret,
+                             backup_codes=backup_codes)
+    
+    elif request.method == 'POST':
+        # Verify the code to confirm setup
+        verification_code = request.form.get('verification_code', '').strip()
+        
+        if not verification_code:
+            flash("Please enter the verification code from your authenticator app.", "error")
+            return redirect(url_for('auth.mfa_setup'))
+        
+        # Get secret from session
+        secret = session.get('mfa_setup_secret')
+        if not secret:
+            flash("Setup session expired. Please start again.", "error")
+            return redirect(url_for('auth.mfa_setup'))
+        
+        # Verify the code
+        if not verify_totp(secret, verification_code):
+            flash("Invalid verification code. Please try again.", "error")
+            return redirect(url_for('auth.mfa_setup'))
+        
+        # Enable MFA
+        enable_mfa_for_user(current_user)
+        
+        # Clear setup session
+        session.pop('mfa_setup_secret', None)
+        backup_codes = session.pop('mfa_setup_backup_codes', None)
+        
+        audit_logger.info(f"MFA enabled: user_id={current_user.id}, username={current_user.username}")
+        
+        flash("Multi-factor authentication has been successfully enabled!", "success")
+        
+        # Show backup codes one final time if available
+        if backup_codes:
+            return render_template('mfa_setup_complete.html', backup_codes=backup_codes)
+        
+        return redirect(url_for('auth.mfa_manage'))
+
+
+@auth_bp.route('/mfa/manage', methods=['GET'])
+@login_required
+def mfa_manage():
+    """MFA management page"""
+    if not current_user.has_mfa_enabled():
+        flash("MFA is not enabled for your account.", "info")
+        return redirect(url_for('auth.profile'))
+    
+    # Get trusted devices
+    trusted_devices = get_trusted_devices(current_user)
+    
+    # Get backup codes count
+    unused_codes_count = current_user.get_unused_backup_codes_count()
+    
+    return render_template('mfa_manage.html',
+                         trusted_devices=trusted_devices,
+                         unused_codes_count=unused_codes_count)
+
+
+@auth_bp.route('/mfa/disable', methods=['POST'])
+@login_required
+def mfa_disable():
+    """Disable MFA for user account"""
+    # Require password confirmation
+    password = request.form.get('password')
+    
+    if not password:
+        flash("Password is required to disable MFA.", "error")
+        return redirect(url_for('auth.mfa_manage'))
+    
+    if not check_password_hash(current_user.password_hash, password):
+        flash("Incorrect password.", "error")
+        return redirect(url_for('auth.mfa_manage'))
+    
+    # Disable MFA
+    if disable_mfa_for_user(current_user):
+        audit_logger.warning(f"MFA disabled: user_id={current_user.id}, username={current_user.username}")
+        flash("Multi-factor authentication has been disabled.", "success")
+    else:
+        flash("Failed to disable MFA.", "error")
+    
+    return redirect(url_for('auth.profile'))
+
+
+@auth_bp.route('/mfa/regenerate-codes', methods=['POST'])
+@login_required
+def mfa_regenerate_codes():
+    """Regenerate backup codes"""
+    if not current_user.has_mfa_enabled():
+        return jsonify({"error": "MFA is not enabled"}), 400
+    
+    # Require password confirmation
+    password = request.form.get('password') or request.json.get('password') if request.is_json else None
+    
+    if not password:
+        return jsonify({"error": "Password is required"}), 400
+    
+    if not check_password_hash(current_user.password_hash, password):
+        return jsonify({"error": "Incorrect password"}), 401
+    
+    # Regenerate codes
+    new_codes = regenerate_backup_codes(current_user)
+    
+    audit_logger.info(f"MFA backup codes regenerated: user_id={current_user.id}, username={current_user.username}")
+    
+    return jsonify({
+        "success": True,
+        "backup_codes": new_codes
+    })
+
+
+@auth_bp.route('/mfa/verify', methods=['GET', 'POST'])
+def mfa_verify():
+    """MFA verification page during login"""
+    # Check if user is in MFA pending state
+    user_id = session.get('mfa_pending_user_id')
+    if not user_id:
+        flash("No MFA verification pending.", "error")
+        return redirect(url_for('auth.login'))
+    
+    user = User.query.get(user_id)
+    if not user or not user.has_mfa_enabled():
+        session.pop('mfa_pending_user_id', None)
+        flash("Invalid MFA state.", "error")
+        return redirect(url_for('auth.login'))
+    
+    if request.method == 'GET':
+        # Show MFA verification form
+        return render_template('mfa_verify.html', 
+                             user=user,
+                             unused_codes_count=user.get_unused_backup_codes_count())
+    
+    elif request.method == 'POST':
+        code = request.form.get('code', '').strip()
+        remember_device = request.form.get('remember_device') == 'on'
+        
+        if not code:
+            flash("Please enter your verification code.", "error")
+            return render_template('mfa_verify.html', user=user,
+                                 unused_codes_count=user.get_unused_backup_codes_count())
+        
+        # Verify the code
+        if not verify_mfa_code(user, code):
+            audit_logger.warning(f"MFA verification failed: user_id={user.id}, username={user.username}, ip={get_real_ip()}")
+            flash("Invalid verification code. Please try again.", "error")
+            return render_template('mfa_verify.html', user=user,
+                                 unused_codes_count=user.get_unused_backup_codes_count())
+        
+        # MFA verification successful
+        audit_logger.info(f"MFA verification successful: user_id={user.id}, username={user.username}, ip={get_real_ip()}")
+        
+        # Complete login
+        login_user(user, remember=True)
+        user.last_login = datetime.datetime.utcnow()
+        db.session.commit()
+        
+        session['token'] = generate_access_token(user.id)
+        session['refresh_token'] = generate_refresh_token(user.id)
+        session.permanent = True
+        
+        # Handle device trust
+        if remember_device:
+            device_fingerprint = generate_device_fingerprint()
+            ip_address = get_real_ip()
+            user_agent = request.headers.get('User-Agent', '')
+            trust_device(user, device_fingerprint, 
+                        device_name=f"Device from {ip_address}",
+                        ip_address=ip_address,
+                        user_agent=user_agent)
+            audit_logger.info(f"Device trusted: user_id={user.id}, fingerprint={device_fingerprint[:16]}...")
+        
+        # Clear MFA pending state
+        session.pop('mfa_pending_user_id', None)
+        
+        # Redirect to intended destination
+        redirect_url = session.pop('mfa_redirect_after_login', None)
+        if not redirect_url:
+            redirect_url = validate_redirect_url(request.args.get("redirect"))
+        
+        if not redirect_url:
+            redirect_url = url_for("auth.profile")
+        
+        return redirect(redirect_url)
+
+
+@auth_bp.route('/mfa/revoke-device/<int:device_id>', methods=['POST'])
+@login_required
+def mfa_revoke_device(device_id):
+    """Revoke a trusted device"""
+    if not current_user.has_mfa_enabled():
+        return jsonify({"error": "MFA is not enabled"}), 400
+    
+    if revoke_trusted_device(current_user, device_id):
+        audit_logger.info(f"Trusted device revoked: user_id={current_user.id}, device_id={device_id}")
+        flash("Device trust has been revoked.", "success")
+    else:
+        flash("Device not found.", "error")
+    
+    return redirect(url_for('auth.mfa_manage'))
+
 
 # =====================================================
 # Admin Announcement System

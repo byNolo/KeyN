@@ -77,6 +77,16 @@ class User(UserMixin, db.Model):
         # We don't need a special flag - having any profile info means it's "completed"
         # This method is for future use if we want to track completion explicitly
         pass
+    
+    def has_mfa_enabled(self):
+        """Check if user has MFA enabled"""
+        return hasattr(self, 'mfa_secret') and self.mfa_secret and self.mfa_secret.is_enabled()
+    
+    def get_unused_backup_codes_count(self):
+        """Get count of unused backup codes"""
+        if not hasattr(self, 'mfa_backup_codes'):
+            return 0
+        return sum(1 for code in self.mfa_backup_codes if not code.used)
 
 class RefreshToken(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -224,4 +234,62 @@ class PasskeyCredential(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'last_used': self.last_used.isoformat() if self.last_used else None,
             'friendly_name': self.friendly_name or 'Passkey'
+        }
+
+
+class MFASecret(db.Model):
+    """Stores encrypted TOTP secrets for multi-factor authentication"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, unique=True, index=True)
+    encrypted_secret = db.Column(db.String(255), nullable=False)  # Encrypted TOTP secret
+    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    enabled = db.Column(db.Boolean, default=True)
+    last_used = db.Column(db.DateTime)
+    
+    user = db.relationship('User', backref=db.backref('mfa_secret', uselist=False, cascade='all, delete-orphan'))
+
+    def is_enabled(self):
+        """Check if MFA is enabled for this user"""
+        return self.enabled
+
+
+class MFABackupCode(db.Model):
+    """Stores hashed backup codes for MFA recovery"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    code_hash = db.Column(db.String(255), nullable=False)  # Hashed backup code
+    used = db.Column(db.Boolean, default=False)
+    used_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    
+    user = db.relationship('User', backref=db.backref('mfa_backup_codes', lazy=True, cascade='all, delete-orphan'))
+
+
+class MFATrustedDevice(db.Model):
+    """Tracks trusted devices that can skip MFA for a limited time"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    device_fingerprint = db.Column(db.String(128), nullable=False)
+    device_name = db.Column(db.String(255))  # User-friendly device name
+    ip_address = db.Column(db.String(64))
+    user_agent = db.Column(db.String(512))
+    trusted_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    expires_at = db.Column(db.DateTime, nullable=False)  # Trust expires after 30 days
+    last_used = db.Column(db.DateTime)
+    is_active = db.Column(db.Boolean, default=True)
+    
+    user = db.relationship('User', backref=db.backref('mfa_trusted_devices', lazy=True, cascade='all, delete-orphan'))
+
+    def is_valid(self):
+        """Check if this trusted device is still valid"""
+        return self.is_active and self.expires_at > datetime.datetime.utcnow()
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'device_name': self.device_name,
+            'ip_address': self.ip_address,
+            'trusted_at': self.trusted_at.isoformat() if self.trusted_at else None,
+            'expires_at': self.expires_at.isoformat() if self.expires_at else None,
+            'last_used': self.last_used.isoformat() if self.last_used else None
         }

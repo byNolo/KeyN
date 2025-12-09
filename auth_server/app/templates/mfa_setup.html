@@ -1,0 +1,411 @@
+{% extends "base.html" %}
+
+{% block title %}Setup Two-Factor Authentication - {{ BRAND_LOCKUP }}{% endblock %}
+
+{% block card_style %} style="width: 1000px;"{% endblock %}
+
+{% block additional_css %}
+<style>
+    /* MFA Setup Specific Styles */
+    .mfa-setup-container {
+        max-width: 700px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    .mfa-setup-card {
+        background: var(--card-background);
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+    }
+
+    .mfa-setup-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .mfa-setup-header i {
+        font-size: 3rem;
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+    }
+
+    .mfa-setup-header h1 {
+        font-size: 1.75rem;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+    }
+
+    .mfa-setup-header p {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+    }
+
+    .mfa-step {
+        margin-bottom: 2rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .mfa-step:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .mfa-step-number {
+        display: inline-block;
+        width: 32px;
+        height: 32px;
+        background: var(--primary-color);
+        color: white;
+        border-radius: 50%;
+        text-align: center;
+        line-height: 32px;
+        font-weight: bold;
+        margin-right: 0.75rem;
+    }
+
+    .mfa-step h2 {
+        font-size: 1.25rem;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .mfa-step p {
+        color: var(--text-secondary);
+        margin-bottom: 1rem;
+        line-height: 1.6;
+    }
+
+    .qr-code-container {
+        text-align: center;
+        padding: 1.5rem;
+        background: var(--input-background);
+        border-radius: 8px;
+        margin: 1rem 0;
+    }
+
+    .qr-code-container img {
+        max-width: 250px;
+        height: auto;
+        border: 4px solid white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .secret-key-display {
+        background: var(--input-background);
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Courier New', monospace;
+        font-size: 1rem;
+        text-align: center;
+        color: var(--text-primary);
+        letter-spacing: 2px;
+        word-break: break-all;
+        margin: 1rem 0;
+    }
+
+    .backup-codes-container {
+        background: var(--input-background);
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin: 1rem 0;
+    }
+
+    .backup-codes-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 0.75rem;
+        margin: 1rem 0;
+    }
+
+    .backup-code {
+        background: var(--card-background);
+        padding: 0.75rem;
+        border-radius: 6px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        text-align: center;
+        font-weight: bold;
+        color: var(--text-primary);
+        border: 2px solid var(--border-color);
+    }
+
+    .backup-codes-warning {
+        background: #fff3cd;
+        color: #856404;
+        padding: 1rem;
+        border-radius: 6px;
+        margin-top: 1rem;
+        display: flex;
+        align-items: start;
+        gap: 0.75rem;
+    }
+
+    .backup-codes-warning i {
+        color: #856404;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .verification-form {
+        max-width: 400px;
+        margin: 1.5rem auto 0;
+    }
+
+    .verification-input-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .verification-input-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+
+    .verification-input-group input {
+        width: 100%;
+        padding: 0.75rem;
+        font-size: 1.1rem;
+        text-align: center;
+        font-family: 'Courier New', monospace;
+        letter-spacing: 4px;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--input-background);
+        color: var(--text-primary);
+        transition: border-color 0.2s;
+    }
+
+    .verification-input-group input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+    }
+
+    .mfa-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+
+    .btn-verify {
+        background: var(--primary-color);
+        color: white;
+        padding: 0.875rem 2rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-verify:hover {
+        background: var(--primary-color-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-cancel {
+        background: transparent;
+        color: var(--text-secondary);
+        padding: 0.875rem 2rem;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-cancel:hover {
+        border-color: var(--text-secondary);
+        color: var(--text-primary);
+    }
+
+    .app-suggestions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+    }
+
+    .app-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: var(--input-background);
+        border-radius: 6px;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    .app-badge i {
+        color: var(--primary-color);
+    }
+
+    @media (max-width: 640px) {
+        .mfa-setup-card {
+            padding: 1.5rem;
+        }
+
+        .backup-codes-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .mfa-actions {
+            flex-direction: column;
+        }
+
+        .btn-verify,
+        .btn-cancel {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mfa-setup-container">
+    <div class="mfa-setup-card">
+        <div class="mfa-setup-header">
+            <i class="fas fa-shield-alt"></i>
+            <h1>Setup Two-Factor Authentication</h1>
+            <p>Add an extra layer of security to your account</p>
+        </div>
+
+        <!-- Step 1: Download Authenticator App -->
+        <div class="mfa-step">
+            <h2>
+                <span class="mfa-step-number">1</span>
+                Download an Authenticator App
+            </h2>
+            <p>
+                Install one of these authenticator apps on your phone or device:
+            </p>
+            <div class="app-suggestions">
+                <span class="app-badge">
+                    <i class="fab fa-google"></i>
+                    Google Authenticator
+                </span>
+                <span class="app-badge">
+                    <i class="fas fa-mobile-alt"></i>
+                    Authy
+                </span>
+                <span class="app-badge">
+                    <i class="fas fa-key"></i>
+                    1Password
+                </span>
+                <span class="app-badge">
+                    <i class="fas fa-shield-halved"></i>
+                    Microsoft Authenticator
+                </span>
+            </div>
+        </div>
+
+        <!-- Step 2: Scan QR Code -->
+        <div class="mfa-step">
+            <h2>
+                <span class="mfa-step-number">2</span>
+                Scan the QR Code
+            </h2>
+            <p>
+                Open your authenticator app and scan this QR code:
+            </p>
+            <div class="qr-code-container">
+                <img src="{{ qr_code }}" alt="MFA QR Code">
+            </div>
+            <p style="text-align: center; font-size: 0.9rem; color: var(--text-secondary);">
+                Can't scan? Enter this code manually:
+            </p>
+            <div class="secret-key-display">
+                {{ secret }}
+            </div>
+        </div>
+
+        <!-- Step 3: Save Backup Codes -->
+        <div class="mfa-step">
+            <h2>
+                <span class="mfa-step-number">3</span>
+                Save Your Backup Codes
+            </h2>
+            <p>
+                Store these backup codes in a safe place. Each code can only be used once if you lose access to your authenticator app.
+            </p>
+            <div class="backup-codes-container">
+                <div class="backup-codes-grid">
+                    {% for code in backup_codes %}
+                    <div class="backup-code">{{ code }}</div>
+                    {% endfor %}
+                </div>
+                <div class="backup-codes-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div>
+                        <strong>Important:</strong> Download or write down these codes now. You won't be able to see them again after completing setup.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 4: Verify -->
+        <div class="mfa-step">
+            <h2>
+                <span class="mfa-step-number">4</span>
+                Verify Your Setup
+            </h2>
+            <p>
+                Enter the 6-digit code from your authenticator app to confirm everything is working:
+            </p>
+            <form method="POST" action="{{ url_for('auth.mfa_setup') }}" class="verification-form">
+                <div class="verification-input-group">
+                    <label for="verification_code">Verification Code</label>
+                    <input type="text" 
+                           id="verification_code" 
+                           name="verification_code" 
+                           placeholder="000000"
+                           maxlength="6"
+                           pattern="[0-9]{6}"
+                           autocomplete="off"
+                           required
+                           autofocus>
+                </div>
+                <div class="mfa-actions">
+                    <button type="submit" class="btn-verify">
+                        <i class="fas fa-check"></i>
+                        Enable Two-Factor Auth
+                    </button>
+                    <a href="{{ url_for('auth.profile') }}" class="btn-cancel">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Auto-focus and auto-format the verification code input
+    document.getElementById('verification_code').addEventListener('input', function(e) {
+        // Remove non-digits
+        this.value = this.value.replace(/\D/g, '');
+        
+        // Auto-submit when 6 digits are entered (optional)
+        if (this.value.length === 6) {
+            // Could auto-submit here if desired
+            // this.form.submit();
+        }
+    });
+</script>
+{% endblock %}

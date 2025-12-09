@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Setup Complete - {{ BRAND_LOCKUP }}{% endblock %}
+
+{% block card_style %} style="width: 1000px;"{% endblock %}
+
+{% block additional_css %}
+<style>
+    .mfa-complete-container {
+        max-width: 600px;
+        margin: 4rem auto;
+        padding: 0 1rem;
+    }
+
+    .mfa-complete-card {
+        background: var(--card-background);
+        border-radius: 12px;
+        padding: 2.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+
+    .success-icon {
+        font-size: 4rem;
+        color: #10b981;
+        margin-bottom: 1.5rem;
+        animation: scaleIn 0.3s ease-out;
+    }
+
+    @keyframes scaleIn {
+        from {
+            transform: scale(0);
+        }
+        to {
+            transform: scale(1);
+        }
+    }
+
+    .mfa-complete-card h1 {
+        font-size: 1.75rem;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+    }
+
+    .mfa-complete-card > p {
+        color: var(--text-secondary);
+        margin-bottom: 2rem;
+    }
+
+    .final-codes-section {
+        background: #fff3cd;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        text-align: left;
+    }
+
+    .final-codes-section h3 {
+        color: #856404;
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .final-codes-section h3 i {
+        font-size: 1.2rem;
+    }
+
+    .final-codes-section p {
+        color: #856404;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+
+    .backup-codes-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+        margin: 1rem 0;
+    }
+
+    .backup-code {
+        background: white;
+        padding: 0.75rem;
+        border-radius: 6px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        text-align: center;
+        font-weight: bold;
+        color: #333;
+        border: 2px solid #ffc107;
+    }
+
+    .btn-download-codes {
+        background: #856404;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .btn-download-codes:hover {
+        background: #6c4f04;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    .btn-continue {
+        background: var(--primary-color);
+        color: white;
+        padding: 0.875rem 2rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.2s;
+    }
+
+    .btn-continue:hover {
+        background: var(--primary-color-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    @media (max-width: 640px) {
+        .backup-codes-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mfa-complete-container">
+    <div class="mfa-complete-card">
+        <div class="success-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        
+        <h1>Two-Factor Authentication Enabled!</h1>
+        <p>Your account is now protected with an additional layer of security.</p>
+
+        {% if backup_codes %}
+        <div class="final-codes-section">
+            <h3>
+                <i class="fas fa-key"></i>
+                Save Your Backup Codes
+            </h3>
+            <p>
+                <strong>Last chance!</strong> Store these codes safely. You won't be able to see them again.
+            </p>
+            <div class="backup-codes-grid">
+                {% for code in backup_codes %}
+                <div class="backup-code">{{ code }}</div>
+                {% endfor %}
+            </div>
+            <button onclick="downloadBackupCodes()" class="btn-download-codes">
+                <i class="fas fa-download"></i>
+                Download Codes as Text
+            </button>
+        </div>
+        {% endif %}
+
+        <div class="action-buttons">
+            <a href="{{ url_for('auth.profile') }}" class="btn-continue">
+                <i class="fas fa-arrow-right"></i>
+                Continue to Profile
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    function downloadBackupCodes() {
+        const codes = [
+            {% for code in backup_codes %}'{{ code }}',{% endfor %}
+        ];
+        
+        const content = `KeyN Two-Factor Authentication Backup Codes
+Generated: ${new Date().toLocaleString()}
+
+IMPORTANT: Store these codes in a safe place. Each code can only be used once.
+
+${codes.join('\n')}
+
+Do not share these codes with anyone.
+`;
+        
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'keyn-backup-codes.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }
+</script>
+{% endblock %}

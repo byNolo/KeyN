@@ -182,6 +182,23 @@
                             <small>Update your account password</small>
                         </div>
                     </a>
+                    {% if user.has_mfa_enabled() %}
+                    <a href="{{ url_for('auth.mfa_manage') }}" class="action-btn">
+                        <i class="fas fa-shield-alt"></i>
+                        <div>
+                            <strong>Two-Factor Authentication</strong>
+                            <small>Manage MFA settings and devices</small>
+                        </div>
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('auth.mfa_setup') }}" class="action-btn highlight">
+                        <i class="fas fa-shield-alt"></i>
+                        <div>
+                            <strong>Enable Two-Factor Auth</strong>
+                            <small>Add extra security to your account</small>
+                        </div>
+                    </a>
+                    {% endif %}
                     <a href="{{ url_for('auth.sessions_page') }}" class="action-btn">
                         <i class="fas fa-devices"></i>
                         <div>
