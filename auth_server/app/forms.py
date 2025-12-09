@@ -40,7 +40,7 @@ def validate_password_strength(form, field):
 
 
 class LoginForm(FlaskForm):
-    username = StringField("Username", validators=[DataRequired()])
+    username = StringField("Username or Email", validators=[DataRequired()])
     password = PasswordField("Password", validators=[DataRequired()])
     submit = SubmitField("Log In")
 
@@ -100,3 +100,8 @@ class ChangePasswordForm(FlaskForm):
         DataRequired(), EqualTo("new_password", message="Passwords must match")
     ])
     submit = SubmitField("Change Password")
+
+# Change Email form (for unverified users)
+class ChangeEmailForm(FlaskForm):
+    new_email = StringField("New Email Address", validators=[DataRequired(), Email()])
+    submit = SubmitField("Update Email")

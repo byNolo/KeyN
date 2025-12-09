@@ -11,7 +11,7 @@
     </div>
   </div>
   <h2>Check Your Email</h2>
-  <p class="subtitle">We've sent a verification link to your email address.<br>Click the link in your inbox to activate your account.</p>
+  <p class="subtitle">We've sent a verification link to {% if email %}<strong>{{ email }}</strong>{% else %}your email address{% endif %}.<br>Click the link in your inbox to activate your account.</p>
   <div class="info-box">
     <ul>
       <li>If you don't see the email, check your spam or junk folder.</li>
@@ -20,6 +20,7 @@
     </ul>
   </div>
   <div class="link-container">
+    <a href="{{ url_for('auth.change_email_verification', redirect=redirect_url) if redirect_url else url_for('auth.change_email_verification') }}" class="btn-secondary" style="margin-bottom: 10px;">Change Email Address</a>
     <a href="{{ url_for('auth.login', redirect=redirect_url) if redirect_url else url_for('auth.login') }}" class="btn-primary">Back to Login</a>
   </div>
 </div>

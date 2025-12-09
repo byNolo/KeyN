@@ -20,7 +20,7 @@
   
   <div class="form-group">
     {{ form.username.label(class="form-label") }}
-    {{ form.username(size=32, class="form-input", placeholder="Enter your username") }}
+    {{ form.username(size=32, class="form-input", placeholder="Enter your username or email") }}
     {% for error in form.username.errors %}
       <span class="error-message">{{ error }}</span>
     {% endfor %}

@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from .models import User, RefreshToken, ClientApplication, DataScope, UserAuthorization, PasskeyCredential
-from .forms import LoginForm, RegisterForm, ForgotPasswordForm, ForgotUsernameForm, ProfileForm, ChangePasswordForm, ProfileCompletionForm
+from .forms import LoginForm, RegisterForm, ForgotPasswordForm, ForgotUsernameForm, ProfileForm, ChangePasswordForm, ProfileCompletionForm, ChangeEmailForm
 from flask_wtf import FlaskForm
 from wtforms import PasswordField, SubmitField
 from wtforms.validators import DataRequired, EqualTo
@@ -67,20 +67,24 @@ def login():
             if not ok:
                 form.username.errors.append('Human verification failed. Please try again.')
                 return render_template("login.html", form=form)
-        username = form.username.data
+        username_or_email = form.username.data
         password = form.password.data
-        user = User.query.filter_by(username=username).first()
+        
+        # Try to find user by username or email
+        user = User.query.filter(
+            (User.username == username_or_email) | (User.email == username_or_email)
+        ).first()
         
         if user and check_password_hash(user.password_hash, password):
             if not user.is_verified:
                 # Log failed attempt for unverified user
-                log_login_attempt(ip_address, device_fingerprint, username, False)
-                audit_logger.warning(f"Login attempt by unverified user: user_id={user.id}, username={username}, ip={ip_address}")
+                log_login_attempt(ip_address, device_fingerprint, username_or_email, False)
+                audit_logger.warning(f"Login attempt by unverified user: user_id={user.id}, username={user.username}, ip={ip_address}")
                 form.username.errors.append("Please verify your email first.")
                 return render_template("login.html", form=form)
             # Log successful login
-            log_login_attempt(ip_address, device_fingerprint, username, True, user.id)
-            audit_logger.info(f"Login success: user_id={user.id}, username={username}, ip={ip_address}")
+            log_login_attempt(ip_address, device_fingerprint, username_or_email, True, user.id)
+            audit_logger.info(f"Login success: user_id={user.id}, username={user.username}, ip={ip_address}")
             
             # Update user's last login
             user.last_login = datetime.datetime.utcnow()
@@ -127,9 +131,9 @@ def login():
             return redirect(redirect_url)
         
         # Log failed login attempt
-        log_login_attempt(ip_address, device_fingerprint, username, False)
-        audit_logger.warning(f"Login failed: username={username}, ip={ip_address}")
-        form.username.errors.append("Invalid username or password")
+        log_login_attempt(ip_address, device_fingerprint, username_or_email, False)
+        audit_logger.warning(f"Login failed: username_or_email={username_or_email}, ip={ip_address}")
+        form.username.errors.append("Invalid username/email or password")
     
     return render_template("login.html", form=form)
 
@@ -495,8 +499,57 @@ def register():
             audit_logger.info(f"New user registered: user_id={new_user.id}, username={new_user.username}, email={new_user.email}, ip={ip_address}")
             
             send_verification_email(new_user, current_app, mail)
-            return render_template("email_verification_sent.html", redirect_url=redirect_url)
+            # Store user_id in session to allow email changes before verification
+            session['pending_verification_user_id'] = new_user.id
+            return render_template("email_verification_sent.html", redirect_url=redirect_url, email=new_user.email)
     return render_template("register.html", form=form, redirect_url=redirect_url)
+
+@auth_bp.route("/change-email-verification", methods=["GET", "POST"])
+def change_email_verification():
+    """Allow unverified users to change their email address"""
+    from .forms import ChangeEmailForm
+    
+    # Check if user has a pending verification (from session)
+    user_id = session.get('pending_verification_user_id')
+    if not user_id:
+        flash("No pending email verification found.", "error")
+        return redirect(url_for('auth.login'))
+    
+    user = User.query.get(user_id)
+    if not user:
+        session.pop('pending_verification_user_id', None)
+        flash("User not found.", "error")
+        return redirect(url_for('auth.register'))
+    
+    if user.is_verified:
+        session.pop('pending_verification_user_id', None)
+        flash("Your email is already verified.", "info")
+        return redirect(url_for('auth.login'))
+    
+    form = ChangeEmailForm()
+    redirect_url = request.args.get("redirect")
+    
+    if form.validate_on_submit():
+        new_email = form.new_email.data
+        
+        # Check if email is already in use by another user
+        existing_user = User.query.filter_by(email=new_email).first()
+        if existing_user and existing_user.id != user.id:
+            form.new_email.errors.append("This email is already in use")
+        else:
+            # Update the email
+            old_email = user.email
+            user.email = new_email
+            db.session.commit()
+            
+            audit_logger.info(f"Email changed for unverified user: user_id={user.id}, old_email={old_email}, new_email={new_email}")
+            
+            # Send verification email to new address
+            send_verification_email(user, current_app, mail)
+            flash(f"Verification email sent to {new_email}", "success")
+            return render_template("email_verification_sent.html", redirect_url=redirect_url, email=new_email)
+    
+    return render_template("change_email_verification.html", form=form, current_email=user.email, redirect_url=redirect_url)
 
 @auth_bp.route("/verify-email/<token>")
 def verify_email(token):
@@ -506,6 +559,9 @@ def verify_email(token):
         if user and not user.is_verified:
             user.is_verified = True
             db.session.commit()
+            
+            # Clear pending verification session if it exists
+            session.pop('pending_verification_user_id', None)
             
             audit_logger.info(f"Email verified: user_id={user.id}, username={user.username}")
             
