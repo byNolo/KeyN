@@ -265,27 +265,46 @@ def validate_redirect_url(url):
         return None
     
     try:
-        parsed = urlparse(url)
-        
-        # Check against allowed domains from config
-        allowed_domains = current_app.config.get('ALLOWED_REDIRECT_DOMAINS', [])
-        
-        # Check if URL starts with an allowed domain
-        if not any(url.startswith(domain) for domain in allowed_domains):
-            current_app.logger.warning(f"Blocked redirect to unauthorized domain: {url}")
+        if any(char in url for char in ['\r', '\n', '\t', '\\']):
+            current_app.logger.warning(f"Blocked redirect with unsafe characters: {url}")
             return None
-        
-        # Additional security checks
+
+        parsed = urlparse(url)
+
         if parsed.scheme not in ['http', 'https', '']:
             current_app.logger.warning(f"Blocked redirect with invalid scheme: {parsed.scheme}")
             return None
-        
-        # Block javascript: and data: URIs
-        if parsed.scheme in ['javascript', 'data', 'file', 'vbscript']:
-            current_app.logger.warning(f"Blocked dangerous redirect scheme: {parsed.scheme}")
+
+        if not parsed.scheme and parsed.netloc:
+            current_app.logger.warning(f"Blocked protocol-relative redirect: {url}")
             return None
+
+        if not parsed.scheme and not parsed.netloc:
+            if url.startswith('/') and not url.startswith('//'):
+                return url
+            current_app.logger.warning(f"Blocked non-root relative redirect: {url}")
+            return None
+
+        if not parsed.netloc:
+            current_app.logger.warning(f"Blocked absolute redirect without host: {url}")
+            return None
+
+        allowed_domains = current_app.config.get('ALLOWED_REDIRECT_DOMAINS', [])
+        for allowed_domain in allowed_domains:
+            allowed_domain = (allowed_domain or '').strip()
+            if not allowed_domain:
+                continue
+
+            allowed = urlparse(allowed_domain)
+            if not allowed.scheme or not allowed.netloc:
+                current_app.logger.warning(f"Skipping malformed allowed redirect domain: {allowed_domain}")
+                continue
+
+            if parsed.scheme == allowed.scheme and parsed.netloc == allowed.netloc:
+                return url
         
-        return url
+        current_app.logger.warning(f"Blocked redirect to unauthorized domain: {url}")
+        return None
         
     except Exception as e:
         current_app.logger.error(f"Error validating redirect URL: {e}")

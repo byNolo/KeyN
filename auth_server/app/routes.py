@@ -41,6 +41,15 @@ auth_bp = Blueprint("auth", __name__)
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+def get_post_auth_redirect(user, redirect_url=None):
+    """Return the destination after login/verification, preserving profile completion."""
+    redirect_url = validate_redirect_url(redirect_url)
+    if user.needs_profile_completion():
+        if redirect_url:
+            return url_for("auth.complete_profile", redirect=redirect_url)
+        return url_for("auth.complete_profile")
+    return redirect_url or url_for("auth.profile")
+
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
     # Get real IP and device fingerprint
@@ -136,15 +145,10 @@ def login():
             # Determine redirect destination (with validation)
             redirect_url = validate_redirect_url(request.args.get("redirect"))
             
-            # If no specific redirect and user needs profile completion, suggest it
-            # But don't force it if they have a specific destination (like OAuth flow)
             if not redirect_url and user.needs_profile_completion():
                 flash("Welcome back! Consider completing your profile for a better experience.", "info")
-                redirect_url = url_for("auth.complete_profile")
-            elif not redirect_url:
-                redirect_url = url_for("auth.profile")
-            
-            return redirect(redirect_url)
+
+            return redirect(get_post_auth_redirect(user, redirect_url))
         
         # Log failed login attempt
         log_login_attempt(ip_address, device_fingerprint, username_or_email, False)
@@ -329,7 +333,7 @@ def revoke_session(session_id):
     db.session.commit()
     return jsonify({"status": "revoked"})
 
-from .auth_utils import send_verification_email, verify_email_token
+from .auth_utils import decode_email_token, send_verification_email
 from . import BRAND_PRODUCT, BRAND_OWNER, BRAND_LOCKUP
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from flask_mail import Message
@@ -349,11 +353,12 @@ def privacy_policy():
 @auth_bp.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
     ip_address = get_real_ip()
+    redirect_url = validate_redirect_url(request.args.get("redirect"))
     
     # Rate limit password reset requests (3 per hour per IP)
     if check_rate_limit(ip_address, 'password_reset', max_attempts=3, window_minutes=60):
         flash("Too many password reset requests. Please try again later.", "error")
-        return render_template("forgot_password.html", form=ForgotPasswordForm())
+        return render_template("forgot_password.html", form=ForgotPasswordForm(), redirect_url=redirect_url)
     
     form = ForgotPasswordForm()
     if form.validate_on_submit():
@@ -362,7 +367,7 @@ def forgot_password():
             ok, err = verify_turnstile(token, ip_address)
             if not ok:
                 form.email.errors.append('Human verification failed. Please try again.')
-                return render_template("forgot_password.html", form=form)
+                return render_template("forgot_password.html", form=form, redirect_url=redirect_url)
         
         user = User.query.filter_by(email=form.email.data).first()
         
@@ -371,7 +376,10 @@ def forgot_password():
         
         if user:
             serializer = get_serializer()
-            token = serializer.dumps(user.email, salt="password-reset-salt")
+            token_payload = {"email": user.email}
+            if redirect_url:
+                token_payload["redirect"] = redirect_url
+            token = serializer.dumps(token_payload, salt="password-reset-salt")
             reset_url = url_for("auth.reset_password", token=token, _external=True)
             msg = Message(f"{BRAND_PRODUCT} Password Reset – {BRAND_OWNER}", recipients=[user.email])
             msg.html = render_template("email/password_reset.html", username=user.username, link=reset_url)
@@ -398,17 +406,23 @@ def forgot_password():
             except Exception as e:
                 print(f"[EMAIL] Warning: Could not attach favicon.png: {e}")
             mail.send(msg)
-        return render_template("forgot_password_sent.html")
-    return render_template("forgot_password.html", form=form)
+        return render_template("forgot_password_sent.html", redirect_url=redirect_url)
+    return render_template("forgot_password.html", form=form, redirect_url=redirect_url)
 
 # Reset Password
 @auth_bp.route("/reset-password/<token>", methods=["GET", "POST"])
 def reset_password(token):
     serializer = get_serializer()
     try:
-        email = serializer.loads(token, salt="password-reset-salt", max_age=3600)
+        token_data = serializer.loads(token, salt="password-reset-salt", max_age=3600)
     except (SignatureExpired, BadSignature):
         return "Invalid or expired token."
+    if isinstance(token_data, dict):
+        email = token_data.get("email")
+        redirect_url = validate_redirect_url(token_data.get("redirect"))
+    else:
+        email = token_data
+        redirect_url = None
     user = User.query.filter_by(email=email).first()
     if not user:
         return "User not found."
@@ -420,8 +434,11 @@ def reset_password(token):
     if form.validate_on_submit():
         user.password_hash = generate_password_hash(form.password.data)
         db.session.commit()
-        return "Password reset successful. You may now log in."
-    return render_template("reset_password.html", form=form)
+        flash("Password reset successful. You may now log in.", "success")
+        if redirect_url:
+            return redirect(url_for("auth.login", redirect=redirect_url))
+        return redirect(url_for("auth.login"))
+    return render_template("reset_password.html", form=form, redirect_url=redirect_url)
 
 # Forgot Username
 @auth_bp.route("/forgot-username", methods=["GET", "POST"])
@@ -480,14 +497,14 @@ from . import mail
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
     ip_address = get_real_ip()
+    redirect_url = validate_redirect_url(request.args.get("redirect"))
     
     # Rate limit registration requests (5 per hour per IP)
     if check_rate_limit(ip_address, 'registration', max_attempts=5, window_minutes=60):
         flash("Too many registration requests. Please try again later.", "error")
-        return render_template("register.html", form=RegisterForm(), redirect_url=request.args.get("redirect"))
+        return render_template("register.html", form=RegisterForm(), redirect_url=redirect_url)
     
     form = RegisterForm()
-    redirect_url = request.args.get("redirect")
     if form.validate_on_submit():
         if current_app.config.get('TURNSTILE_ENABLED', False):
             token = request.form.get('cf-turnstile-response')
@@ -514,7 +531,7 @@ def register():
             
             audit_logger.info(f"New user registered: user_id={new_user.id}, username={new_user.username}, email={new_user.email}, ip={ip_address}")
             
-            send_verification_email(new_user, current_app, mail)
+            send_verification_email(new_user, current_app, mail, redirect_url=redirect_url)
             # Store user_id in session to allow email changes before verification
             session['pending_verification_user_id'] = new_user.id
             return render_template("email_verification_sent.html", redirect_url=redirect_url, email=new_user.email)
@@ -543,7 +560,7 @@ def change_email_verification():
         return redirect(url_for('auth.login'))
     
     form = ChangeEmailForm()
-    redirect_url = request.args.get("redirect")
+    redirect_url = validate_redirect_url(request.args.get("redirect"))
     
     if form.validate_on_submit():
         new_email = form.new_email.data
@@ -561,7 +578,7 @@ def change_email_verification():
             audit_logger.info(f"Email changed for unverified user: user_id={user.id}, old_email={old_email}, new_email={new_email}")
             
             # Send verification email to new address
-            send_verification_email(user, current_app, mail)
+            send_verification_email(user, current_app, mail, redirect_url=redirect_url)
             flash(f"Verification email sent to {new_email}", "success")
             return render_template("email_verification_sent.html", redirect_url=redirect_url, email=new_email)
     
@@ -569,7 +586,9 @@ def change_email_verification():
 
 @auth_bp.route("/verify-email/<token>")
 def verify_email(token):
-    user_id = verify_email_token(token, current_app)
+    token_data = decode_email_token(token, current_app)
+    user_id = token_data.get("user_id") if token_data else None
+    redirect_url = validate_redirect_url(token_data.get("redirect")) if token_data else None
     if user_id:
         user = User.query.get(user_id)
         if user and not user.is_verified:
@@ -588,8 +607,10 @@ def verify_email(token):
             if user.needs_profile_completion():
                 # Redirect to profile completion with a message
                 flash("Welcome to KeyN! Let's complete your profile to get started.", "info")
-                return redirect(url_for("auth.complete_profile"))
+                return redirect(get_post_auth_redirect(user, redirect_url))
             else:
+                if redirect_url:
+                    return redirect(redirect_url)
                 # User already has some profile info, go to regular verified page
                 return render_template("email_verified.html")
         else:
@@ -1575,7 +1596,12 @@ def passkeys_authenticate():
         session.permanent = True
         session.pop('webauthn_auth_challenge', None)
         session.pop('webauthn_auth_challenge_b64', None)
-        return jsonify({'success': True, 'user': {'id': user.id, 'username': user.username}})
+        redirect_url = validate_redirect_url(data.get('redirect')) if isinstance(data, dict) else None
+        return jsonify({
+            'success': True,
+            'redirect_url': get_post_auth_redirect(user, redirect_url),
+            'user': {'id': user.id, 'username': user.username}
+        })
     except Exception as e:
         if current_app.config.get('PASSKEY_DEBUG'):
             return jsonify({'error': str(e)}), 400
@@ -1785,14 +1811,11 @@ def mfa_verify():
         session.pop('mfa_pending_user_id', None)
         
         # Redirect to intended destination
-        redirect_url = session.pop('mfa_redirect_after_login', None)
+        redirect_url = validate_redirect_url(session.pop('mfa_redirect_after_login', None))
         if not redirect_url:
             redirect_url = validate_redirect_url(request.args.get("redirect"))
-        
-        if not redirect_url:
-            redirect_url = url_for("auth.profile")
-        
-        return redirect(redirect_url)
+
+        return redirect(get_post_auth_redirect(user, redirect_url))
 
 
 @auth_bp.route('/mfa/revoke-device/<int:device_id>', methods=['POST'])

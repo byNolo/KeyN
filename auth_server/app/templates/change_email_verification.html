@@ -17,7 +17,7 @@
 </div>
 {% endif %}
 
-<form method="POST">
+<form method="POST" action="{{ url_for('auth.change_email_verification', redirect=redirect_url) if redirect_url else url_for('auth.change_email_verification') }}">
   {{ form.hidden_tag() }}
   
   <div class="form-group">

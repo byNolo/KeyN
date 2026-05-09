@@ -15,7 +15,7 @@
 <h2>Create account</h2>
 <p class="subtitle">Join KeyN and access all connected apps</p>
 
-<form method="POST" id="register-form" action="?{% if redirect_url %}redirect={{ redirect_url }}{% endif %}">
+<form method="POST" id="register-form" action="{{ url_for('auth.register', redirect=redirect_url) if redirect_url else url_for('auth.register') }}">
   {{ form.hidden_tag() }}
   
   <div class="form-group">

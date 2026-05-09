@@ -49,7 +49,7 @@
 
 <div class="link-container">
   <p>Don't have an account? <a href="{{ url_for('auth.register', redirect=request.args.get('redirect')) if request.args.get('redirect') else url_for('auth.register') }}">Sign up here</a></p>
-  <p><a href="{{ url_for('auth.forgot_password') }}">Forgot Password?</a> | <a href="{{ url_for('auth.forgot_username') }}">Forgot Username?</a></p>
+  <p><a href="{{ url_for('auth.forgot_password', redirect=request.args.get('redirect')) if request.args.get('redirect') else url_for('auth.forgot_password') }}">Forgot Password?</a> | <a href="{{ url_for('auth.forgot_username') }}">Forgot Username?</a></p>
 </div>
 {% block additional_js %}
 {{ super() }}
@@ -149,7 +149,9 @@
         method:'POST',
         headers:{'Content-Type':'application/json'},
         credentials: 'same-origin',
-        body: JSON.stringify(data)
+        body: JSON.stringify(Object.assign({}, data, {
+          redirect: new URLSearchParams(window.location.search).get('redirect')
+        }))
       });
       const verifyJson = await verifyResp.json().catch(()=>({}));
       if(!verifyResp.ok || !verifyJson.success){
@@ -158,7 +160,7 @@
       statusEl.textContent = 'Success! Redirecting...';
       const params = new URLSearchParams(window.location.search);
       const redirect = params.get('redirect');
-      window.location.href = redirect || '/profile';
+      window.location.href = verifyJson.redirect_url || redirect || '/profile';
     } catch(e){
       console.error(e);
       // Friendlier messages for common cases

@@ -4,13 +4,20 @@ import jwt
 import datetime
 import os
 
-def send_verification_email(user, app, mail):
+def send_verification_email(user, app, mail, redirect_url=None):
     print(f"[EMAIL] Starting verification email send to {user.email}")
 
-    token = jwt.encode({
+    payload = {
         "user_id": user.id,
         "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1)
-    }, app.config["SECRET_KEY"], algorithm="HS256")
+    }
+    if redirect_url:
+        from .security_utils import validate_redirect_url
+        validated_redirect = validate_redirect_url(redirect_url)
+        if validated_redirect:
+            payload["redirect"] = validated_redirect
+
+    token = jwt.encode(payload, app.config["SECRET_KEY"], algorithm="HS256")
 
     link = url_for("auth.verify_email", token=token, _external=True)
     print(f"[EMAIL] Generated verification link: {link}")
@@ -65,15 +72,21 @@ def send_verification_email(user, app, mail):
         traceback.print_exc()
 
 
-def send_password_reset_email(user, app, mail):
+def send_password_reset_email(user, app, mail, redirect_url=None):
     """Send password reset email with PNG attachments"""
+    from itsdangerous import URLSafeTimedSerializer
+
     print("Sending password reset email to", user.email)
 
-    token = jwt.encode({
-        "user_id": user.id,
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1)
-    }, app.config["SECRET_KEY"], algorithm="HS256")
+    payload = {"email": user.email}
+    if redirect_url:
+        from .security_utils import validate_redirect_url
+        validated_redirect = validate_redirect_url(redirect_url)
+        if validated_redirect:
+            payload["redirect"] = validated_redirect
 
+    serializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
+    token = serializer.dumps(payload, salt="password-reset-salt")
     link = url_for("auth.reset_password", token=token, _external=True)
 
     html_body = render_template("email/password_reset.html", 
@@ -116,15 +129,21 @@ def send_password_reset_email(user, app, mail):
         import traceback
         traceback.print_exc()
 
-def verify_email_token(token, app):
-    """Verify email verification token"""
+def decode_email_token(token, app):
+    """Decode email verification token payload."""
     try:
-        data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
-        return data["user_id"]
+        return jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
     except jwt.ExpiredSignatureError:
         return None
     except jwt.InvalidTokenError:
         return None
+
+def verify_email_token(token, app):
+    """Verify email verification token"""
+    data = decode_email_token(token, app)
+    if not data:
+        return None
+    return data.get("user_id")
 
 def admin_required(f):
     """Decorator to require admin access"""

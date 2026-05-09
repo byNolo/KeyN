@@ -35,7 +35,7 @@
         </div>
 
         <!-- Form -->
-        <form method="POST" class="complete-profile-form">
+        <form method="POST" class="complete-profile-form" action="{{ url_for('auth.complete_profile', redirect=redirect_url) if redirect_url else url_for('auth.complete_profile') }}">
             {{ form.hidden_tag() }}
             
             <div class="form-sections">
